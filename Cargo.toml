@@ -1,0 +1,12 @@
+[package]
+name = "bot-trainer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tch = "0.13.0"
+rand = "0.8.5"
+bot-engine-gltf = {version = "0.1.0", path = "../bot-engine-gltf"}
+three-rs = {version = "0.1.0", path = "../three-rs"}
+sdl2 = "0.35"
+glow = "0.13.0"
