@@ -1,8 +1,9 @@
 use bot_engine_gltf::renderer::{Renderer, ModelRef, RGB};
+use gltf::mesh::Mode;
 use sdl2::{pixels, render::{CanvasBuilder, Canvas}, video::Window, EventPump, rect::Point};
 use three_rs::math::{vector3::Vector3, triangle::Triangle, quaternion::Quaternion};
 
-use crate::loaders::glb;
+use crate::loaders::glb::{self, Primitive};
 
 pub struct Object {
     pub visible: bool,
@@ -10,17 +11,13 @@ pub struct Object {
     pub rot: Vector3,
     pub q: Quaternion,
     pub scale: Vector3,
-    pub triangles: Vec<Triangle>,
-    pub is_mesh: bool,
-    pub is_open: bool,
+    pub primitives: Vec<Primitive>,
     pub color: RGB,
 }
 
 impl Object {
     pub fn new(
-        triangles: Vec<Triangle>,
-        is_mesh: bool,
-        is_open: bool,
+        primitives: Vec<Primitive>,
         color: RGB
     ) -> Self {
         Self {
@@ -29,9 +26,7 @@ impl Object {
             q: Quaternion::identity(),
             scale: Vector3::one(),
             visible: false,
-            triangles,
-            is_mesh,
-            is_open,
+            primitives,
             color,
         }
     }
@@ -76,55 +71,85 @@ impl Renderer for SdlRenderer {
         self.objects = vec![];
     }
     
-    fn add_model_from_file(
+    fn add_from_file(
         &mut self,
         color: RGB,
         id: &str
     ) -> Result<ModelRef, String> {
-        let triangles = glb::load_from_file(id)?;
+        let primitives = glb::load_from_file(id)?;
         let rf = self.objects.len();
 
-        self.objects.push(Object::new(triangles, true, false, color));
+        self.objects.push(Object::new(primitives, color));
 
         Ok(rf)
     }
 
-    fn add_model_from_bytes(
+    fn add_from_bytes(
         &mut self,
         color: RGB,
         bytes: &[u8]
     ) -> Result<ModelRef, String> {
-        let triangles = glb::load_from_bytes(bytes)?;
+        let primitives = glb::load_from_bytes(bytes)?;
         let rf = self.objects.len();
 
-        self.objects.push(Object::new(triangles, true, false, color));
+        self.objects.push(Object::new(primitives, color));
 
         Ok(rf)
     }
 
-    fn add_model_from_gltf(
+    fn add_from_gltf(
         &mut self,
         color: RGB,
         doc: &gltf::Document,
         buffers: &Vec<gltf::buffer::Data>
     ) -> Result<ModelRef, String> {
-        let triangles = glb::load(&doc.default_scene().unwrap(), buffers)?;
+        let primitives = glb::load(&doc.default_scene().unwrap(), buffers)?;
         let rf = self.objects.len();
 
-        self.objects.push(Object::new(triangles, true, false, color));
+        self.objects.push(Object::new(primitives, color));
 
         Ok(rf)
     }
 
-    fn add_model_from_triangles(
+    fn add_from_triangles(
         &mut self,
         color: RGB,
-        triangles: Vec<Triangle>,
-        is_open: bool
+        triangles: Vec<Triangle>
     ) -> Result<ModelRef, String> {
         let rf = self.objects.len();
 
-        self.objects.push(Object::new(triangles, false, is_open, color));
+        self.objects.push(Object::new(
+            vec![
+                Primitive::new(
+                    Mode::Triangles,
+                    triangles.iter()
+                        .map(|t| [t.a, t.b, t.c])
+                        .flatten()
+                        .collect::<Vec<_>>()
+                )
+            ],
+            color
+        ));
+
+        Ok(rf)
+    }
+
+    fn add_from_vertices(
+        &mut self,
+        color: RGB,
+        vertices: Vec<Vector3>
+    ) -> Result<ModelRef, String> {
+        let rf = self.objects.len();
+
+        self.objects.push(Object::new(
+            vec![
+                Primitive::new(
+                    Mode::LineStrip,
+                    vertices
+                )
+            ],
+            color
+        ));
 
         Ok(rf)
     }
@@ -141,6 +166,14 @@ impl Renderer for SdlRenderer {
         rf: ModelRef
     ) {
         self.objects[rf].visible = false;
+    }
+
+    fn set_vertices(
+        &mut self,
+        rf: ModelRef,
+        vertices: Vec<Vector3>
+    ) {
+        self.objects[rf].primitives[0].vertices = vertices;
     }
 
     fn set_position(
@@ -188,42 +221,43 @@ impl Renderer for SdlRenderer {
                     pixels::Color::RGB(obj.color[0], obj.color[1], obj.color[2])
                 );
 
-                for tri in &obj.triangles {
-                    _ = self.canvas.draw_line(
-                        Point::new(
-                            (hw + (obj.pos.x + tri.a.x) * w) as i32, 
-                            (hh + (obj.pos.z + tri.a.z) * h) as i32
-                        ), 
-                        Point::new(
-                            (hw + (obj.pos.x + tri.b.x) * w) as i32, 
-                            (hh + (obj.pos.z + tri.b.z) * h) as i32
-                        )
-                    );
-
-                    if !obj.is_mesh {
-                        _ = self.canvas.draw_line(
-                            Point::new(
-                                (hw + (obj.pos.x + tri.b.x) * w) as i32, 
-                                (hh + (obj.pos.z + tri.b.z) * h) as i32
-                            ), 
-                            Point::new(
-                                (hw + (obj.pos.x + tri.c.x) * w) as i32, 
-                                (hh + (obj.pos.z + tri.c.z) * h) as i32
-                            )
-                        );
-
-                        if !obj.is_open {
-                            _ = self.canvas.draw_line(
-                                Point::new(
-                                    (hw + (obj.pos.x + tri.c.x) * w) as i32, 
-                                    (hh + (obj.pos.z + tri.c.z) * h) as i32
-                                ), 
-                                Point::new(
-                                    (hw + (obj.pos.x + tri.a.x) * w) as i32, 
-                                    (hh + (obj.pos.z + tri.a.z) * h) as i32
-                                )
-                            );
-                        }
+                for primitive in &obj.primitives {
+                    match primitive.mode {
+                        gltf::mesh::Mode::Triangles |
+                        gltf::mesh::Mode::TriangleStrip |
+                        gltf::mesh::Mode::TriangleFan => {
+                            for i in 0..primitive.vertices.len() {
+                                let a = &primitive.vertices[i];
+                                let b = &primitive.vertices[(i + 1) % primitive.vertices.len()];
+                                _ = self.canvas.draw_line(
+                                    Point::new(
+                                        (hw + (obj.pos.x + a.x) * w) as i32, 
+                                        (hh + (obj.pos.z + a.z) * h) as i32
+                                    ), 
+                                    Point::new(
+                                        (hw + (obj.pos.x + b.x) * w) as i32, 
+                                        (hh + (obj.pos.z + b.z) * h) as i32
+                                    )
+                                );
+                            }
+                        },
+                        Mode::LineStrip => {
+                            for i in 0..primitive.vertices.len()-1 {
+                                let a = &primitive.vertices[i];
+                                let b = &primitive.vertices[i+1];
+                                _ = self.canvas.draw_line(
+                                    Point::new(
+                                        (hw + (obj.pos.x + a.x) * w) as i32, 
+                                        (hh + (obj.pos.z + a.z) * h) as i32
+                                    ), 
+                                    Point::new(
+                                        (hw + (obj.pos.x + b.x) * w) as i32, 
+                                        (hh + (obj.pos.z + b.z) * h) as i32
+                                    )
+                                );
+                            }
+                        },
+                        _ => (),
                     }
                 }
             }

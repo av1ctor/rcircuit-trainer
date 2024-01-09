@@ -80,7 +80,7 @@ fn main(
             num_players: NUM_PLAYERS,
             min_keys: 4,
             player_radius: PLAYER_RADIUS,
-            debug: false,
+            debug: true,
             training: LEARNING,
             max_steps: 1000,
         },

@@ -1,16 +1,33 @@
-use gltf::Gltf;
-use three_rs::math::{matrix4::Matrix4, triangle::Triangle, vector3::Vector3};
+use gltf::{Gltf, mesh::Mode};
+use three_rs::math::{matrix4::Matrix4, vector3::Vector3};
+
+pub struct Primitive {
+    pub mode: Mode,
+    pub vertices: Vec<Vector3>,
+}
+
+impl Primitive {
+    pub fn new(
+        mode: Mode,
+        vertices: Vec<Vector3>
+    ) -> Self {
+        Self {
+            mode,
+            vertices,
+        }
+    }
+}
 
 pub fn load_from_file(
     path: &str
-) -> Result<Vec<Triangle>, String> {
+) -> Result<Vec<Primitive>, String> {
     let bytes = std::fs::read(path).map_err(|err| err.to_string())?;
     load_from_bytes(&bytes)
 }
 
 pub fn load_from_bytes(
     bytes: &[u8]
-) -> Result<Vec<Triangle>, String> {
+) -> Result<Vec<Primitive>, String> {
     let gltf = Gltf::from_slice(&bytes).unwrap();
     let buffers = gltf::import_buffers(&gltf.document, None, gltf.blob).unwrap();
     load(&gltf.document.default_scene().unwrap(), &buffers)
@@ -19,9 +36,9 @@ pub fn load_from_bytes(
 pub fn load<'a>(
     scene: &gltf::Scene<'_>,
     buffers: &Vec<gltf::buffer::Data>
-) -> Result<Vec<Triangle>, String> {
+) -> Result<Vec<Primitive>, String> {
     
-    let mut triangles = vec![];
+    let mut res = vec![];
     
     for node in scene.nodes() {
         traverse_meshes(
@@ -37,34 +54,14 @@ pub fn load<'a>(
                             .map(|ind| ind.into_u32().collect())
                             .unwrap_or((0..vertices.len() as u32).collect());
 
-                        let mut tri_vertices = vec![];
+                        let mut prim_vertices = vec![];
                 
                         match primitive.mode() {
-                            gltf::mesh::Mode::Triangles => {
-                                for i in (0..indices.len()).step_by(3) {
-                                    tri_vertices.push([
-                                        vertices[indices[i] as usize],
-                                        vertices[indices[i + 1] as usize],
-                                        vertices[indices[i + 2] as usize],
-                                    ]);
-                                }
-                            }
-                            gltf::mesh::Mode::TriangleStrip => {
-                                for i in 0..(indices.len() - 2) {
-                                    tri_vertices.push([
-                                        vertices[indices[i] as usize + i % 2],
-                                        vertices[indices[i + 1 - i % 2] as usize],
-                                        vertices[indices[i + 2] as usize],
-                                    ]);
-                                }
-                            }
+                            gltf::mesh::Mode::Triangles |
+                            gltf::mesh::Mode::TriangleStrip |
                             gltf::mesh::Mode::TriangleFan => {
-                                for i in 1..(indices.len() - 1) {
-                                    tri_vertices.push([
-                                        vertices[indices[0] as usize],
-                                        vertices[indices[i] as usize],
-                                        vertices[indices[i + 1] as usize],
-                                    ]);
+                                for i in 0..indices.len() {
+                                    prim_vertices.push(vertices[indices[i] as usize]);
                                 }
                             }
                             _ => {
@@ -72,13 +69,15 @@ pub fn load<'a>(
                             },
                         }
 
-                        for tri in tri_vertices {
-                            let a = Vector3::from_slice(&tri[0]).apply_matrix4(world_matrix);
-                            let b = Vector3::from_slice(&tri[1]).apply_matrix4(world_matrix);
-                            let c = Vector3::from_slice(&tri[2]).apply_matrix4(world_matrix);
-
-                            triangles.push(Triangle::new(a, b, c));
+                        let mut prims = vec![];
+                        for v in &mut prim_vertices {
+                            prims.push(Vector3::from_slice(&v).apply_matrix4(world_matrix));
                         }
+
+                        res.push(Primitive{
+                            mode: primitive.mode().clone(),
+                            vertices: prims,
+                        })
                     }
                 }
 
@@ -87,7 +86,7 @@ pub fn load<'a>(
         )?;
     }
 
-    Ok(triangles)
+    Ok(res)
 }
 
 fn traverse_meshes(
