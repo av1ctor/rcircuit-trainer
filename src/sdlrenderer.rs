@@ -257,6 +257,22 @@ impl Renderer for SdlRenderer {
                                 );
                             }
                         },
+                        Mode::Lines => {
+                            let a = &primitive.vertices[0];
+                            for i in 1..primitive.vertices.len() {
+                                let b = &primitive.vertices[i];
+                                _ = self.canvas.draw_line(
+                                    Point::new(
+                                        (hw + (obj.pos.x + a.x) * w) as i32, 
+                                        (hh + (obj.pos.z + a.z) * h) as i32
+                                    ), 
+                                    Point::new(
+                                        (hw + (obj.pos.x + b.x) * w) as i32, 
+                                        (hh + (obj.pos.z + b.z) * h) as i32
+                                    )
+                                );
+                            }
+                        },
                         _ => (),
                     }
                 }

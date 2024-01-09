@@ -33,7 +33,7 @@ const STEPS_PER_THOUGHT: u32 = ((FPS / TPS) * 1000.0) as u32;
 const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
 const RAYS: usize = 15;
 const FOV: f32 = 180.0 * (PI / 180.0);
-const PLAYER_RADIUS: f32 = 20.0;
+const PLAYER_RADIUS: f32 = 0.5;
 
 const REPLAY_BUFFER_CAPACITY: usize = 15_000;
 const TRAINING_BATCH_SIZE: usize = 32;
