@@ -37,12 +37,12 @@ pub fn load<'a>(
                             .map(|ind| ind.into_u32().collect())
                             .unwrap_or((0..vertices.len() as u32).collect());
 
-                        let mut tris = vec![];
+                        let mut tri_vertices = vec![];
                 
                         match primitive.mode() {
                             gltf::mesh::Mode::Triangles => {
                                 for i in (0..indices.len()).step_by(3) {
-                                    tris.push([
+                                    tri_vertices.push([
                                         vertices[indices[i] as usize],
                                         vertices[indices[i + 1] as usize],
                                         vertices[indices[i + 2] as usize],
@@ -51,7 +51,7 @@ pub fn load<'a>(
                             }
                             gltf::mesh::Mode::TriangleStrip => {
                                 for i in 0..(indices.len() - 2) {
-                                    tris.push([
+                                    tri_vertices.push([
                                         vertices[indices[i] as usize + i % 2],
                                         vertices[indices[i + 1 - i % 2] as usize],
                                         vertices[indices[i + 2] as usize],
@@ -60,7 +60,7 @@ pub fn load<'a>(
                             }
                             gltf::mesh::Mode::TriangleFan => {
                                 for i in 1..(indices.len() - 1) {
-                                    tris.push([
+                                    tri_vertices.push([
                                         vertices[indices[0] as usize],
                                         vertices[indices[i] as usize],
                                         vertices[indices[i + 1] as usize],
@@ -72,7 +72,7 @@ pub fn load<'a>(
                             },
                         }
 
-                        for tri in tris {
+                        for tri in tri_vertices {
                             let a = Vector3::from_slice(&tri[0]).apply_matrix4(world_matrix);
                             let b = Vector3::from_slice(&tri[1]).apply_matrix4(world_matrix);
                             let c = Vector3::from_slice(&tri[2]).apply_matrix4(world_matrix);

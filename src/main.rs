@@ -210,8 +210,7 @@ fn main(
                 obs_ts_vec[p] = next_obs_ts;
             }
 
-            if steps % 60 == 0 {
-                //println!("{:?}", game.entities.players[0].base.pos);
+            if steps % 10 == 0 {
                 game.render();
             }
         }
