@@ -1,11 +1,12 @@
 
-mod glrenderer;
+mod sdlrenderer;
 mod replaybuffer;
 mod dqn;
 mod agent;
 mod baseagent;
 mod dqnagent;
 mod ddqnagent;
+mod loaders;
 
 use std::collections::HashSet;
 use std::f32::consts::PI;
@@ -15,7 +16,7 @@ use ddqnagent::DdqnAgent;
 use bot_engine_gltf::env::Env;
 use bot_engine_gltf::game::{Game, GameOptions, ObjectFOV};
 use dqn::DqnOptions;
-use glrenderer::GlRenderer;
+use sdlrenderer::SdlRenderer;
 use rand::{SeedableRng, Rng};
 use rand::rngs::StdRng;
 use sdl2::keyboard::Scancode;
@@ -23,8 +24,8 @@ use tch::{Tensor, Device};
 
 const LEARNING: bool = true;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
-const SCREEN_WIDTH: u32 = 1600;
-const SCREEN_HEIGHT: u32 = 800;
+const SCREEN_WIDTH: u32 = 1500;
+const SCREEN_HEIGHT: u32 = 1000;
 const ACCEL_FACTOR: f32 = if LEARNING {10.0} else {1.0};
 const FPS: f32 = 60.0 * ACCEL_FACTOR; // frames per sec
 const TPS: f32 = 30.0 * ACCEL_FACTOR; // thoughts per sec
@@ -63,6 +64,9 @@ fn main(
         panic!("Error loading level-0's model");
     };
 
+    let (mut renderer, mut event_loop) = SdlRenderer::new(SCREEN_WIDTH, SCREEN_HEIGHT)
+        .expect("Renderer initialization failed");
+
     let mut game = Game::new(
         &level_bytes.to_vec(), 
         &navmesh_bytes.to_vec(),
@@ -79,11 +83,9 @@ fn main(
             debug: false,
             training: LEARNING,
             max_steps: 1000,
-        }
+        },
+        &mut renderer
     );
-
-    let mut renderer = GlRenderer::new(SCREEN_WIDTH, SCREEN_HEIGHT)
-        .expect("Renderer initialization failed");
 
     let options = BaseAgentOptions { 
         dqn: DqnOptions {
@@ -129,7 +131,7 @@ fn main(
         }
 
         while running {
-            for event in renderer.event_loop.poll_iter() {
+            for event in event_loop.poll_iter() {
                 match event {
                     sdl2::event::Event::Quit { .. } => {
                         break 'main;
@@ -208,9 +210,9 @@ fn main(
                 obs_ts_vec[p] = next_obs_ts;
             }
 
-            if steps % 10 == 0 {
+            if steps % 60 == 0 {
                 //println!("{:?}", game.entities.players[0].base.pos);
-                renderer.render();
+                game.render();
             }
         }
 
