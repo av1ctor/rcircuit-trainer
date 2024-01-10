@@ -134,7 +134,7 @@ impl Renderer for SdlRenderer {
         Ok(rf)
     }
 
-    fn add_from_vertices(
+    fn add_from_linestrips(
         &mut self,
         color: RGB,
         vertices: Vec<Vector3>
@@ -145,6 +145,26 @@ impl Renderer for SdlRenderer {
             vec![
                 Primitive::new(
                     Mode::LineStrip,
+                    vertices
+                )
+            ],
+            color
+        ));
+
+        Ok(rf)
+    }
+
+    fn add_from_lines(
+        &mut self,
+        color: RGB,
+        vertices: Vec<Vector3>
+    ) -> Result<ModelRef, String> {
+        let rf = self.objects.len();
+
+        self.objects.push(Object::new(
+            vec![
+                Primitive::new(
+                    Mode::Lines,
                     vertices
                 )
             ],
