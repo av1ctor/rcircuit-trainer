@@ -32,7 +32,7 @@ const TPS: f32 = 30.0 * ACCEL_FACTOR; // thoughts per sec
 const STEPS_PER_THOUGHT: u32 = ((FPS / TPS) * 1000.0) as u32;
 const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
 const RAYS: usize = 15;
-const FOV: f32 = 180.0 * (PI / 180.0);
+const FOV: f32 = 120.0 * (PI / 180.0);
 const PLAYER_RADIUS: f32 = 0.5;
 
 const REPLAY_BUFFER_CAPACITY: usize = 15_000;
@@ -45,6 +45,7 @@ const EPSILON: f64 = 1.0;
 const EPSILON_MIN: f64 = 0.05;
 const EPSILON_DECAY: f64 = 5e-5;
 const NUM_HIDDEN: usize = 32;
+const MAX_STEPS: usize = 15000;
 
 fn main(
 ) -> Result<(), String> {
@@ -75,14 +76,14 @@ fn main(
             fov: ObjectFOV { 
                 rays: RAYS, 
                 angle: FOV, 
-                max_dist: PLAYER_RADIUS * 10.0,
+                max_dist: 5.0,
             },
             num_players: NUM_PLAYERS,
             min_keys: 4,
             player_radius: PLAYER_RADIUS,
             debug: true,
             training: LEARNING,
-            max_steps: 5000,
+            max_steps: MAX_STEPS,
         },
         &mut renderer
     );
@@ -210,7 +211,7 @@ fn main(
                 obs_ts_vec[p] = next_obs_ts;
             }
 
-            if steps % 10 == 0 {
+            if steps % 60 == 0 {
                 game.render();
             }
         }
