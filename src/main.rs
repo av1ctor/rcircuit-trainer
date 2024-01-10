@@ -24,11 +24,10 @@ use tch::{Tensor, Device};
 
 const LEARNING: bool = true;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
-const SCREEN_WIDTH: u32 = 1500;
-const SCREEN_HEIGHT: u32 = 1000;
-const ACCEL_FACTOR: f32 = if LEARNING {10.0} else {1.0};
-const FPS: f32 = 60.0 * ACCEL_FACTOR; // frames per sec
-const TPS: f32 = 30.0 * ACCEL_FACTOR; // thoughts per sec
+const SCREEN_WIDTH: u32 = 1000;
+const SCREEN_HEIGHT: u32 = 800;
+const FPS: f32 = 60.0; // frames per sec
+const TPS: f32 = 30.0; // thoughts per sec
 const STEPS_PER_THOUGHT: u32 = ((FPS / TPS) * 1000.0) as u32;
 const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
 const RAYS: usize = 15;
@@ -37,19 +36,20 @@ const PLAYER_RADIUS: f32 = 0.5;
 
 const REPLAY_BUFFER_CAPACITY: usize = 15_000;
 const TRAINING_BATCH_SIZE: usize = 32;
-const MAX_EPISODES: usize = 80;
+const MAX_EPISODES: usize = 40;
 const LEARNING_RATE: f64 = 0.0005;
 const REPLACE_TARGET_CNT: usize = 128;
 const GAMMA: f64 = 0.99;
 const EPSILON: f64 = 1.0;
 const EPSILON_MIN: f64 = 0.05;
-const EPSILON_DECAY: f64 = 5e-5;
+const EPSILON_DECAY: f64 = 1e-5;
 const NUM_HIDDEN: usize = 32;
 const MAX_STEPS: usize = 15000;
 
 fn main(
 ) -> Result<(), String> {
-    let path = format!("./weights/{}rays-{}hidden-{}fps-{}tps-{}epsilon.safetensors", RAYS, NUM_HIDDEN, FPS / ACCEL_FACTOR, TPS / ACCEL_FACTOR, EPSILON_MIN);
+    let path = format!("./weights/{}rays-{}hidden-{}fps-{}tps-{}epsilon.safetensors", 
+        RAYS, NUM_HIDDEN, FPS, TPS, EPSILON_MIN);
     let mut rng = StdRng::seed_from_u64(1234);
     let mut _pov = 0;
 
@@ -81,7 +81,7 @@ fn main(
             num_players: NUM_PLAYERS,
             min_keys: 4,
             player_radius: PLAYER_RADIUS,
-            debug: true,
+            debug: false,
             training: LEARNING,
             max_steps: MAX_STEPS,
         },

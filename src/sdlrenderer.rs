@@ -241,14 +241,16 @@ impl Renderer for SdlRenderer {
                     pixels::Color::RGB(obj.color[0], obj.color[1], obj.color[2])
                 );
 
+                let angle = -obj.rot.angle_zx();
+
                 for p in &obj.primitives {
                     match p.mode {
                         gltf::mesh::Mode::Triangles |
                         gltf::mesh::Mode::TriangleStrip |
                         gltf::mesh::Mode::TriangleFan => {
                             for i in 0..p.vertices.len() {
-                                let a = &p.vertices[i];
-                                let b = &p.vertices[(i + 1) % p.vertices.len()];
+                                let a = &p.vertices[i].rotate_y(angle);
+                                let b = &p.vertices[(i + 1) % p.vertices.len()].rotate_y(angle);
                                 
                                 _ = self.canvas.draw_line(
                                     Point::new(
