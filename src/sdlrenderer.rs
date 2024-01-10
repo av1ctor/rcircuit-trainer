@@ -241,14 +241,15 @@ impl Renderer for SdlRenderer {
                     pixels::Color::RGB(obj.color[0], obj.color[1], obj.color[2])
                 );
 
-                for primitive in &obj.primitives {
-                    match primitive.mode {
+                for p in &obj.primitives {
+                    match p.mode {
                         gltf::mesh::Mode::Triangles |
                         gltf::mesh::Mode::TriangleStrip |
                         gltf::mesh::Mode::TriangleFan => {
-                            for i in 0..primitive.vertices.len() {
-                                let a = &primitive.vertices[i];
-                                let b = &primitive.vertices[(i + 1) % primitive.vertices.len()];
+                            for i in 0..p.vertices.len() {
+                                let a = p.vertices[i].rotate_y(-obj.rot.angle_z());
+                                let b = p.vertices[(i + 1) % p.vertices.len()].rotate_y(-obj.rot.angle_z());
+                                
                                 _ = self.canvas.draw_line(
                                     Point::new(
                                         (hw + (obj.pos.x + a.x) * w) as i32, 
@@ -262,9 +263,9 @@ impl Renderer for SdlRenderer {
                             }
                         },
                         Mode::LineStrip => {
-                            for i in 0..primitive.vertices.len()-1 {
-                                let a = &primitive.vertices[i];
-                                let b = &primitive.vertices[i+1];
+                            for i in 0..p.vertices.len()-1 {
+                                let a = &p.vertices[i];
+                                let b = &p.vertices[i+1];
                                 _ = self.canvas.draw_line(
                                     Point::new(
                                         (hw + (obj.pos.x + a.x) * w) as i32, 
@@ -278,9 +279,9 @@ impl Renderer for SdlRenderer {
                             }
                         },
                         Mode::Lines => {
-                            let a = &primitive.vertices[0];
-                            for i in 1..primitive.vertices.len() {
-                                let b = &primitive.vertices[i];
+                            let a = &p.vertices[0];
+                            for i in 1..p.vertices.len() {
+                                let b = &p.vertices[i];
                                 _ = self.canvas.draw_line(
                                     Point::new(
                                         (hw + (obj.pos.x + a.x) * w) as i32, 

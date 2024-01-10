@@ -75,14 +75,14 @@ fn main(
             fov: ObjectFOV { 
                 rays: RAYS, 
                 angle: FOV, 
-                max_dist: PLAYER_RADIUS * 2.0,
+                max_dist: PLAYER_RADIUS * 5.0,
             },
             num_players: NUM_PLAYERS,
             min_keys: 4,
             player_radius: PLAYER_RADIUS,
             debug: true,
             training: LEARNING,
-            max_steps: 1000,
+            max_steps: 5000,
         },
         &mut renderer
     );
