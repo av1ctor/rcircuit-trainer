@@ -247,8 +247,8 @@ impl Renderer for SdlRenderer {
                         gltf::mesh::Mode::TriangleStrip |
                         gltf::mesh::Mode::TriangleFan => {
                             for i in 0..p.vertices.len() {
-                                let a = p.vertices[i].rotate_y(-obj.rot.angle_z());
-                                let b = p.vertices[(i + 1) % p.vertices.len()].rotate_y(-obj.rot.angle_z());
+                                let a = &p.vertices[i];
+                                let b = &p.vertices[(i + 1) % p.vertices.len()];
                                 
                                 _ = self.canvas.draw_line(
                                     Point::new(

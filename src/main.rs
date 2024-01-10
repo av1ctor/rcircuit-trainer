@@ -75,7 +75,7 @@ fn main(
             fov: ObjectFOV { 
                 rays: RAYS, 
                 angle: FOV, 
-                max_dist: PLAYER_RADIUS * 5.0,
+                max_dist: PLAYER_RADIUS * 10.0,
             },
             num_players: NUM_PLAYERS,
             min_keys: 4,
