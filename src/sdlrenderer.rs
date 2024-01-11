@@ -2,9 +2,7 @@ use bot_engine_gltf::renderer::{Renderer, ModelRef, RGB};
 use gltf::mesh::Mode;
 use sdl2::{pixels, render::{CanvasBuilder, Canvas}, video::Window, EventPump, rect::Point};
 use three_rs::math::{vector3::Vector3, triangle::Triangle, quaternion::Quaternion};
-
 use crate::loaders::glb::{self, Primitive};
-
 pub struct Object {
     pub visible: bool,
     pub pos: Vector3,
@@ -229,10 +227,10 @@ impl Renderer for SdlRenderer {
         self.canvas.clear();
 
         let a = (self.w as f32) / (self.h as f32);
-        let w = (self.w as f32) / 80.0;
-        let h = (self.h as f32) * a / 80.0;
+        let w = (self.w as f32) / 160.0;
+        let h = (self.h as f32) * a / 160.0;
 
-        let hw = 200.0;
+        let hw = 400.0;
         let hh = 200.0;
 
         for obj in &self.objects {
@@ -249,17 +247,27 @@ impl Renderer for SdlRenderer {
                         gltf::mesh::Mode::TriangleStrip |
                         gltf::mesh::Mode::TriangleFan => {
                             for i in 0..p.vertices.len() {
-                                let a = &p.vertices[i].rotate_y(angle);
-                                let b = &p.vertices[(i + 1) % p.vertices.len()].rotate_y(angle);
+                                let a = if angle != 0.0 {
+                                    p.vertices[i].rotate_y(angle)
+                                }
+                                else {
+                                    p.vertices[i]
+                                };
+                                let b = if angle != 0.0 {
+                                    p.vertices[(i + 1) % p.vertices.len()].rotate_y(angle)
+                                }
+                                else {
+                                    p.vertices[(i + 1) % p.vertices.len()]
+                                };
                                 
                                 _ = self.canvas.draw_line(
                                     Point::new(
-                                        (hw + (obj.pos.x + a.x) * w) as i32, 
-                                        (hh + (obj.pos.z + a.z) * h) as i32
+                                        (hw + (obj.pos.z + a.z) * w) as i32, 
+                                        (hh + (obj.pos.x + a.x) * h) as i32
                                     ), 
                                     Point::new(
-                                        (hw + (obj.pos.x + b.x) * w) as i32, 
-                                        (hh + (obj.pos.z + b.z) * h) as i32
+                                        (hw + (obj.pos.z + b.z) * w) as i32, 
+                                        (hh + (obj.pos.x + b.x) * h) as i32
                                     )
                                 );
                             }
@@ -270,12 +278,12 @@ impl Renderer for SdlRenderer {
                                 let b = &p.vertices[i+1];
                                 _ = self.canvas.draw_line(
                                     Point::new(
-                                        (hw + (obj.pos.x + a.x) * w) as i32, 
-                                        (hh + (obj.pos.z + a.z) * h) as i32
+                                        (hw + (obj.pos.z + a.z) * w) as i32, 
+                                        (hh + (obj.pos.x + a.x) * h) as i32
                                     ), 
                                     Point::new(
-                                        (hw + (obj.pos.x + b.x) * w) as i32, 
-                                        (hh + (obj.pos.z + b.z) * h) as i32
+                                        (hw + (obj.pos.z + b.z) * w) as i32, 
+                                        (hh + (obj.pos.x + b.x) * h) as i32
                                     )
                                 );
                             }
@@ -286,12 +294,12 @@ impl Renderer for SdlRenderer {
                                 let b = &p.vertices[i];
                                 _ = self.canvas.draw_line(
                                     Point::new(
-                                        (hw + (obj.pos.x + a.x) * w) as i32, 
-                                        (hh + (obj.pos.z + a.z) * h) as i32
+                                        (hw + (obj.pos.z + a.z) * w) as i32, 
+                                        (hh + (obj.pos.x + a.x) * h) as i32
                                     ), 
                                     Point::new(
-                                        (hw + (obj.pos.x + b.x) * w) as i32, 
-                                        (hh + (obj.pos.z + b.z) * h) as i32
+                                        (hw + (obj.pos.z + b.z) * w) as i32, 
+                                        (hh + (obj.pos.x + b.x) * h) as i32
                                     )
                                 );
                             }

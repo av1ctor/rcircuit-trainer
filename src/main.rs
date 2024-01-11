@@ -25,7 +25,7 @@ use tch::{Tensor, Device};
 const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
 const SCREEN_W: u32 = 1000;
-const SCREEN_H: u32 = 800;
+const SCREEN_H: u32 = 600;
 const FPS: f32 = 60.0; // frames per sec
 const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
 const RAYS: usize = 15;
@@ -60,9 +60,9 @@ fn main(
     let map_suffix = if LEARNING {"-training"} else {""};
 
     let (level_bytes, navmesh_bytes) = if let Ok(level_bytes) = 
-        std::fs::read(format!("./maps/level-0/map{}.glb", map_suffix)) {
+        std::fs::read(format!("./maps/level-0/map{}-giga.glb", map_suffix)) {
         if let Ok(navmesh_bytes) = 
-            std::fs::read(format!("./maps/level-0/navmesh{}.bin", map_suffix)) {
+            std::fs::read(format!("./maps/level-0/navmesh{}-giga.bin", map_suffix)) {
             (level_bytes, navmesh_bytes)
         }
         else {
@@ -227,7 +227,7 @@ fn main(
                 players[i].obs = next_obs_ts;
             }
 
-            if steps % if LEARNING {60} else {10} == 0 {
+            if steps % if LEARNING {100} else {10} == 0 {
                 game.render();
             }
         }
