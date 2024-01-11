@@ -24,10 +24,9 @@ use tch::{Tensor, Device};
 
 const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
-const SCREEN_WIDTH: u32 = 1000;
-const SCREEN_HEIGHT: u32 = 800;
+const SCREEN_W: u32 = 1000;
+const SCREEN_H: u32 = 800;
 const FPS: f32 = 60.0; // frames per sec
-const STEPS_PER_THOUGHT: u32 = if LEARNING {1000} else {10000}; // times 1000
 const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
 const RAYS: usize = 15;
 const FOV: f32 = 180.0 * (PI / 180.0);
@@ -45,6 +44,12 @@ const EPSILON_DECAY: f64 = 5e-6;
 const NUM_HIDDEN: usize = 32;
 const MAX_STEPS: usize = 30000;
 
+struct Player {
+    last_thought: u32,
+    steps_per_thought: u32,
+    obs: Tensor,
+}
+
 fn main(
 ) -> Result<(), String> {
     let tensors_path = format!("./weights/{}rays-{}hidden-{}epsilon.safetensors", 
@@ -54,8 +59,10 @@ fn main(
 
     let map_suffix = if LEARNING {"-training"} else {""};
 
-    let (level_bytes, navmesh_bytes) = if let Ok(level_bytes) = std::fs::read(format!("./maps/level-0/map{}.glb", map_suffix)) {
-        if let Ok(navmesh_bytes) = std::fs::read(format!("./maps/level-0/navmesh{}.bin", map_suffix)) {
+    let (level_bytes, navmesh_bytes) = if let Ok(level_bytes) = 
+        std::fs::read(format!("./maps/level-0/map{}.glb", map_suffix)) {
+        if let Ok(navmesh_bytes) = 
+            std::fs::read(format!("./maps/level-0/navmesh{}.bin", map_suffix)) {
             (level_bytes, navmesh_bytes)
         }
         else {
@@ -66,7 +73,7 @@ fn main(
         panic!("Error loading level-0's model");
     };
 
-    let (mut renderer, mut event_loop) = SdlRenderer::new(SCREEN_WIDTH, SCREEN_HEIGHT)
+    let (mut renderer, mut event_loop) = SdlRenderer::new(SCREEN_W, SCREEN_H)
         .expect("Renderer initialization failed");
 
     let mut game = Game::new(
@@ -110,6 +117,20 @@ fn main(
         agent.load(tensors_path.to_string())?;
     }
 
+    let mut players = vec![];
+    for _ in 0..NUM_PLAYERS {
+        players.push(Player {
+            last_thought: 0,
+            steps_per_thought: if LEARNING { 
+                1000 
+            } 
+            else {
+                rng.gen_range(1000..10000)
+            },
+            obs: Tensor::default(),
+        });
+    }
+
     let mut best_win_rate = 0.0;
     let mut sample = 10;
     let mut results: Vec<usize> = vec![];
@@ -120,15 +141,11 @@ fn main(
 
         let mut steps = 0;
         let mut running = true;
-        let mut thought_step_counter = 0u32;
 
-        let mut obs_vec = vec![]; 
-        let mut obs_ts_vec = vec![];
-        
         let obs = &game.reset(&mut rng);
         for i in 0..game.options.num_players {
-            obs_vec.push(&obs[i]);
-            obs_ts_vec.push(Tensor::from_slice(&obs[i]).to(Device::Cuda(0)));
+            players[i].last_thought = 0;
+            players[i].obs = Tensor::from_slice(&obs[i]).to(Device::Cuda(0));
         }
 
         while running {
@@ -141,41 +158,37 @@ fn main(
                         if scancode == Scancode::Escape {
                             break 'main;
                         }
-                        else if scancode as i32 >= Scancode::Num1 as i32 && scancode as i32 <= Scancode::Num9 as i32 {
-                            _pov = ((scancode as i32 - Scancode::Num1 as i32) as usize) % game.options.num_players;
+                        else if scancode as i32 >= Scancode::Num1 as i32 && 
+                            scancode as i32 <= Scancode::Num9 as i32 {
+                            _pov = ((scancode as i32 - Scancode::Num1 as i32) as usize) % 
+                                game.options.num_players;
                         }
                     },
                     _ => {}
                 }
             }
 
-            thought_step_counter += 1000;
-            let do_think = thought_step_counter >= STEPS_PER_THOUGHT;
+            let mut actions = vec![None; game.options.num_players];
 
-            let actions = if do_think  { 
-                thought_step_counter = 0;
+            let players_idx = gen_players_idx(&mut game, &mut rng);
+            
+            for i in 0..game.options.num_players {
+                let p = players_idx[i];
+                let player = &mut players[p];
                 
-                let mut actions = vec![0i64; game.options.num_players];
+                player.last_thought += 1000;
+                if player.last_thought >= player.steps_per_thought {
+                    player.last_thought = 0;
 
-                let players_idx = gen_players_idx(&mut game, &mut rng);
-                
-                for i in 0..game.options.num_players {
-                    let p = players_idx[i];
-                    let action_ts = agent.choose_action(&obs_ts_vec[p], &mut rng)
+                    let action_ts = agent.choose_action(&player.obs, &mut rng)
                         .unwrap_or(Tensor::from(game.random_action(&mut rng) as i64)
                             .to(Device::Cuda(0)));
 
                     let mut action = vec![0i64; 1];
                     action_ts.copy_data(&mut action, 1);
-                    actions[p] = action[0];
+                    actions[p] = Some(action[0] as usize);
                 }
-
-                actions.iter()
-                    .map(|v| Some(v.clone() as usize))
-                    .collect::<Vec<Option<usize>>>()
-            } else {
-                vec![None; game.options.num_players]
-            };
+            }
 
             let step = game.step(&actions, DELTA_TIME);
             steps += 1;
@@ -189,26 +202,29 @@ fn main(
                 score += step.players[0].reward;
             }
 
-            for p in 0..step.players.len() {
-                let obs = &step.players[p].obs;
+            for i in 0..step.players.len() {
+                let obs = &step.players[i].obs;
                 let next_obs_ts = Tensor::from_slice(obs).to(Device::Cuda(0));
 
-                if LEARNING && p == 0 && do_think {
-                    let action_ts = Tensor::from_slice(&[actions[0].unwrap() as i64])
-                        .to(Device::Cuda(0));
-                    agent.store_transition(
-                        &obs_ts_vec[0], 
-                        &action_ts, 
-                        &step.players[0].reward.into(), 
-                        &next_obs_ts, 
-                        &step.terminated.into(),
-                        &step.timedout.into()
-                    );
+                if LEARNING {
+                    if players[0].last_thought == 0 {
+                        let action_ts = Tensor::from_slice(&[actions[0].unwrap() as i64])
+                            .to(Device::Cuda(0));
 
-                    agent.learn(&mut rng);
+                        agent.store_transition(
+                            &players[0].obs, 
+                            &action_ts, 
+                            &step.players[0].reward.into(), 
+                            &next_obs_ts, 
+                            &step.terminated.into(),
+                            &step.timedout.into()
+                        );
+
+                        agent.learn(&mut rng);
+                    }
                 }
 
-                obs_ts_vec[p] = next_obs_ts;
+                players[i].obs = next_obs_ts;
             }
 
             if steps % if LEARNING {60} else {10} == 0 {
