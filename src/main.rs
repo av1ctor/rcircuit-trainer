@@ -19,9 +19,7 @@ use rand::rngs::StdRng;
 use sdl2::keyboard::Scancode;
 use tch::{Tensor, Device};
 use gl_renderer::GlRenderer;
-use three_rs::core::Transformable;
-
-use crate::gl_renderer::Event;
+use three_rs::{core::Transformable, renderer::Event};
 
 const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
@@ -61,9 +59,9 @@ fn main(
     let map_suffix = if LEARNING {"-training"} else {""};
 
     let (level_bytes, navmesh_bytes) = if let Ok(level_bytes) = 
-        std::fs::read(format!("./maps/level-0/map{}-giga.glb", map_suffix)) {
+        std::fs::read(format!("./maps/level-0/map{}.glb", map_suffix)) {
         if let Ok(navmesh_bytes) = 
-            std::fs::read(format!("./maps/level-0/navmesh{}-giga.bin", map_suffix)) {
+            std::fs::read(format!("./maps/level-0/navmesh{}.bin", map_suffix)) {
             (level_bytes, navmesh_bytes)
         }
         else {

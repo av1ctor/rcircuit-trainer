@@ -6,13 +6,8 @@ use three_rs::{
     object::Mesh, 
     camera::{PerspectiveCamera, ObjectCamera}, 
     scene::Scene, 
-    core::{Transformable, Geometrical, Object3d, RGB},
+    core::{Transformable, Geometrical, Object3d, RGB}, renderer::Event,
 };
-
-pub enum Event {
-    Quit,
-    KeyDown(usize),
-}
 
 pub struct GlRenderer {
     pub w: usize,
@@ -29,7 +24,9 @@ impl GlRenderer {
         h: u32
     ) -> Result<Rc<RefCell<Self>>, String> {
         unsafe {
-            let renderer = Rc::new(RefCell::new(three_rs::renderer::GlRenderer::new("trainer", w, h)));
+            let renderer = Rc::new(RefCell::new(
+                three_rs::renderer::GlRenderer::new("trainer", w, h)
+            ));
             let mut camera = PerspectiveCamera::new(75.0, (w as f32) / (h as f32), 0.1, 1000.0);
             let scene = Scene::new(renderer.clone());
 
@@ -52,21 +49,7 @@ impl GlRenderer {
     pub fn poll_events(
         &mut self
     ) -> Vec<Event> {
-        let mut events = vec![];
-        
-        for event in self.renderer.borrow_mut().events_loop.poll_iter() {
-            match event {
-                sdl2::event::Event::Quit { .. } => {
-                    events.push(Event::Quit);
-                },
-                sdl2::event::Event::KeyDown {scancode: Some(scancode), ..} => {
-                    events.push(Event::KeyDown(scancode as _));
-                }
-                _ => {}
-            }
-        }
-        
-        events
+        self.renderer.borrow_mut().poll_events()
     }
 }
 
