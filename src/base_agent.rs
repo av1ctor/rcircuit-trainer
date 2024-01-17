@@ -1,7 +1,7 @@
 use rand::{rngs::StdRng, Rng};
 use tch::Tensor;
 
-use crate::{replaybuffer::ReplayBuffer, dqn::{DqnOptions, DeepQNetwork}};
+use crate::{replay_buffer::ReplayBuffer, dqn::{DqnOptions, DeepQNetwork}};
 
 #[derive(Clone)]
 pub struct BaseAgentOptions {

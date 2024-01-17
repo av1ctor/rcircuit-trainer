@@ -1,7 +1,6 @@
 use rand::rngs::StdRng;
 use tch::Tensor;
-
-use crate::baseagent::BaseAgentOptions;
+use crate::base_agent::BaseAgentOptions;
 
 pub trait Agent {
     fn new(

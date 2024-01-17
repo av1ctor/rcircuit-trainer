@@ -1,7 +1,6 @@
 use rand::rngs::StdRng;
 use tch::{Tensor, Scalar};
-
-use crate::{baseagent::{BaseAgent, BaseAgentOptions}, agent::Agent};
+use crate::{base_agent::{BaseAgent, BaseAgentOptions}, agent::Agent};
 
 pub struct DqnAgent {
     pub base: BaseAgent,
@@ -33,7 +32,9 @@ impl Agent for DqnAgent {
         terminated: &Tensor,
         timedout: &Tensor
     ) {
-        self.base.store_transition(state, action, reward, next_state, terminated, timedout)
+        self.base.store_transition(
+            state, action, reward, next_state, terminated, timedout
+        )
     }
 
     fn learn(

@@ -1,7 +1,6 @@
 use rand::rngs::StdRng;
 use tch::{Scalar, Tensor};
-
-use crate::baseagent::{BaseAgent, BaseAgentOptions};
+use crate::base_agent::{BaseAgent, BaseAgentOptions};
 use crate::agent::Agent;
 
 pub struct DdqnAgent {
@@ -34,7 +33,9 @@ impl Agent for DdqnAgent {
         terminated: &Tensor,
         timedout: &Tensor
     ) {
-        self.base.store_transition(state, action, reward, next_state, terminated, timedout)
+        self.base.store_transition(
+            state, action, reward, next_state, terminated, timedout
+        )
     }
 
     fn learn(
@@ -58,7 +59,8 @@ impl Agent for DdqnAgent {
             let q_next = q_next.masked_fill(&terminated.eq(1i64), Scalar::from(0.0f64));
     
             let max_actions = q_eval.argmax(1, false);
-            let q_target = rewards + self.base.options.gamma * q_next.index_select(1, &max_actions);
+            let q_target = rewards + 
+                self.base.options.gamma * q_next.index_select(1, &max_actions);
     
             q_target
         }).mse_loss(&q_pred, tch::Reduction::Mean);

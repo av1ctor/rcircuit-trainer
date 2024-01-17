@@ -1,26 +1,27 @@
-
-mod sdlrenderer;
-mod replaybuffer;
+mod replay_buffer;
 mod dqn;
 mod agent;
-mod baseagent;
+mod base_agent;
 mod dqnagent;
-mod ddqnagent;
-mod loaders;
+mod ddqn_agent;
+mod gl_renderer;
 
 use std::collections::HashSet;
 use std::f32::consts::PI;
 use agent::Agent;
-use baseagent::BaseAgentOptions;
-use ddqnagent::DdqnAgent;
+use base_agent::BaseAgentOptions;
+use ddqn_agent::DdqnAgent;
 use bot_engine_gltf::env::Env;
 use bot_engine_gltf::game::{Game, GameOptions, ObjectFOV};
 use dqn::DqnOptions;
-use sdlrenderer::SdlRenderer;
 use rand::{SeedableRng, Rng};
 use rand::rngs::StdRng;
 use sdl2::keyboard::Scancode;
 use tch::{Tensor, Device};
+use gl_renderer::GlRenderer;
+use three_rs::core::Transformable;
+
+use crate::gl_renderer::Event;
 
 const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
@@ -73,7 +74,7 @@ fn main(
         panic!("Error loading level-0's model");
     };
 
-    let (mut renderer, mut event_loop) = SdlRenderer::new(SCREEN_W, SCREEN_H)
+    let renderer = GlRenderer::new(SCREEN_W, SCREEN_H)
         .expect("Renderer initialization failed");
 
     let mut game = Game::new(
@@ -92,7 +93,7 @@ fn main(
             training: LEARNING,
             max_steps: MAX_STEPS,
         },
-        &mut renderer
+        renderer.clone()
     );
 
     let options = BaseAgentOptions { 
@@ -149,13 +150,14 @@ fn main(
         }
 
         while running {
-            for event in event_loop.poll_iter() {
+            let events = renderer.borrow_mut().poll_events();
+            for event in events {
                 match event {
-                    sdl2::event::Event::Quit { .. } => {
+                    Event::Quit => {
                         break 'main;
                     },
-                    sdl2::event::Event::KeyDown {scancode: Some(scancode), ..} => {
-                        if scancode == Scancode::Escape {
+                    Event::KeyDown(scancode) => {
+                        if scancode == Scancode::Escape as usize {
                             break 'main;
                         }
                         else if scancode as i32 >= Scancode::Num1 as i32 && 
@@ -163,8 +165,31 @@ fn main(
                             _pov = ((scancode as i32 - Scancode::Num1 as i32) as usize) % 
                                 game.options.num_players;
                         }
-                    },
-                    _ => {}
+                        else if scancode == Scancode::Left as usize {
+                            renderer.borrow_mut().camera.translate_x(-10.0);
+                        }
+                        else if scancode == Scancode::Right as usize {
+                            renderer.borrow_mut().camera.translate_x(10.0);
+                        }
+                        else if scancode == Scancode::Up as usize {
+                            renderer.borrow_mut().camera.translate_y(10.0);
+                        }
+                        else if scancode == Scancode::Down as usize {
+                            renderer.borrow_mut().camera.translate_y(-10.0);
+                        }
+                        else if scancode == Scancode::KpPlus as usize {
+                            renderer.borrow_mut().camera.translate_z(-10.0);
+                        }
+                        else if scancode == Scancode::KpMinus as usize {
+                            renderer.borrow_mut().camera.translate_z(10.0);
+                        }
+                        else if scancode == Scancode::Q as usize {
+                            renderer.borrow_mut().camera.rotate_y(-0.1);
+                        }
+                        else if scancode == Scancode::W as usize {
+                            renderer.borrow_mut().camera.rotate_y(0.1);
+                        }
+                    }
                 }
             }
 
@@ -227,7 +252,7 @@ fn main(
                 players[i].obs = next_obs_ts;
             }
 
-            if steps % if LEARNING {100} else {10} == 0 {
+            if steps % if LEARNING {12} else {6} == 0 {
                 game.render();
             }
         }

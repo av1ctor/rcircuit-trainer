@@ -9,4 +9,4 @@ rand = "0.8.5"
 bot-engine-gltf = {version = "0.1.0", path = "../bot-engine-gltf"}
 three-rs = {version = "0.1.0", path = "../three-rs"}
 gltf = {version = "1.4.0", features = ["import"]}
-sdl2 = "0.35"
+sdl2 = "0.36"
