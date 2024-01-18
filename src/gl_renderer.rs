@@ -63,11 +63,10 @@ impl renderer::Renderer for GlRenderer {
     
     fn add_from_file(
         &mut self,
-        color: RGB,
         id: &str
     ) -> Result<ModelRef, String> {
         if let Ok(bytes) = fs::read(id) {
-            self.add_from_bytes(color, &bytes)
+            self.add_from_bytes(&bytes)
         }
         else {
             Err("File not found".to_string())
@@ -76,7 +75,6 @@ impl renderer::Renderer for GlRenderer {
 
     fn add_from_bytes(
         &mut self,
-        _color: RGB,
         bytes: &[u8]
     ) -> Result<ModelRef, String> {
         let mesh = Gltf::load_from_bytes(bytes)?;
@@ -90,7 +88,6 @@ impl renderer::Renderer for GlRenderer {
 
     fn add_from_gltf(
         &mut self,
-        _color: RGB,
         doc: &gltf::Document,
         buffers: &Vec<gltf::buffer::Data>
     ) -> Result<ModelRef, String> {
