@@ -72,7 +72,7 @@ fn main(
         panic!("Error loading level-0's model");
     };
 
-    let renderer = GlRenderer::new(SCREEN_W, SCREEN_H)
+    let mut renderer = GlRenderer::new(SCREEN_W, SCREEN_H)
         .expect("Renderer initialization failed");
 
     let mut game = Game::new(
@@ -90,8 +90,7 @@ fn main(
             debug: LEARNING,
             training: LEARNING,
             max_steps: MAX_STEPS,
-        },
-        renderer.clone()
+        }
     );
 
     let options = BaseAgentOptions { 
@@ -141,14 +140,14 @@ fn main(
         let mut steps = 0;
         let mut running = true;
 
-        let obs = &game.reset(&mut rng);
+        let obs = &game.reset(&mut renderer, &mut rng);
         for i in 0..game.options.num_players {
             players[i].last_thought = 0;
             players[i].obs = Tensor::from_slice(&obs[i]).to(Device::Cuda(0));
         }
 
         while running {
-            let events = renderer.borrow_mut().poll_events();
+            let events = renderer.poll_events();
             for event in events {
                 match event {
                     Event::Quit => {
@@ -164,28 +163,28 @@ fn main(
                                 game.options.num_players;
                         }
                         else if scancode == Scancode::Left as usize {
-                            renderer.borrow_mut().camera.translate_x(-10.0);
+                            renderer.camera.translate_x(-10.0);
                         }
                         else if scancode == Scancode::Right as usize {
-                            renderer.borrow_mut().camera.translate_x(10.0);
+                            renderer.camera.translate_x(10.0);
                         }
                         else if scancode == Scancode::Up as usize {
-                            renderer.borrow_mut().camera.translate_y(10.0);
+                            renderer.camera.translate_y(10.0);
                         }
                         else if scancode == Scancode::Down as usize {
-                            renderer.borrow_mut().camera.translate_y(-10.0);
+                            renderer.camera.translate_y(-10.0);
                         }
                         else if scancode == Scancode::KpPlus as usize {
-                            renderer.borrow_mut().camera.translate_z(-10.0);
+                            renderer.camera.translate_z(-10.0);
                         }
                         else if scancode == Scancode::KpMinus as usize {
-                            renderer.borrow_mut().camera.translate_z(10.0);
+                            renderer.camera.translate_z(10.0);
                         }
                         else if scancode == Scancode::Q as usize {
-                            renderer.borrow_mut().camera.rotate_y(-0.1);
+                            renderer.camera.rotate_y(-0.1);
                         }
                         else if scancode == Scancode::W as usize {
-                            renderer.borrow_mut().camera.rotate_y(0.1);
+                            renderer.camera.rotate_y(0.1);
                         }
                     }
                 }
@@ -213,7 +212,7 @@ fn main(
                 }
             }
 
-            let step = game.step(&actions, DELTA_TIME);
+            let step = game.step(&actions, DELTA_TIME, &mut renderer);
             steps += 1;
 
             running = !step.terminated && !step.timedout;
@@ -251,7 +250,7 @@ fn main(
             }
 
             if steps % if LEARNING {12} else {6} == 0 {
-                game.render();
+                game.render(&mut renderer);
             }
         }
 

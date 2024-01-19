@@ -1,12 +1,13 @@
 use std::{cell::RefCell, rc::Rc, fs};
-use bot_engine_gltf::renderer::{ModelRef, self};
+use bot_engine_gltf::renderer::{ModelRef, Renderer};
 use three_rs::{
     math::{Vector3, Quaternion, Euler, Triangle}, 
     loader::Gltf, 
     object::Mesh, 
     camera::{PerspectiveCamera, ObjectCamera}, 
     scene::Scene, 
-    core::{Transformable, Geometrical, Object3d, RGB}, renderer::Event,
+    core::{Transformable, Geometrical, Object3d, RGB}, 
+    renderer::Event,
 };
 
 pub struct GlRenderer {
@@ -22,7 +23,7 @@ impl GlRenderer {
     pub fn new(
         w: u32,
         h: u32
-    ) -> Result<Rc<RefCell<Self>>, String> {
+    ) -> Result<Self, String> {
         unsafe {
             let renderer = Rc::new(RefCell::new(
                 three_rs::renderer::GlRenderer::new("trainer", w, h)
@@ -35,14 +36,14 @@ impl GlRenderer {
                 .translate_z(50.0)
                 .translate_x(15.0);
 
-            Ok(Rc::new(RefCell::new(Self{
+            Ok(Self{
                 w: w as _,
                 h: h as _,
                 objects: vec![],
                 scene,
                 camera,
                 renderer,
-            })))
+            })
         }
     }
 
@@ -53,7 +54,7 @@ impl GlRenderer {
     }
 }
 
-impl renderer::Renderer for GlRenderer {
+impl Renderer for GlRenderer {
     fn reset(
         &mut self
     ) {
