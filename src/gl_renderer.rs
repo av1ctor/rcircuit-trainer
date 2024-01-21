@@ -1,5 +1,5 @@
 use std::{cell::RefCell, rc::Rc, fs};
-use bot_engine_gltf::renderer::{ModelRef, Renderer};
+use brains_engine::renderer::{ModelRef, Renderer};
 use three_rs::{
     math::{Vector3, Quaternion, Euler, Triangle}, 
     loader::Gltf, 
