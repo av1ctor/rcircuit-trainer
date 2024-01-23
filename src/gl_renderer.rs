@@ -1,13 +1,7 @@
 use std::{cell::RefCell, rc::Rc, fs};
 use brains_engine::renderer::{ModelRef, Renderer};
 use three_rs::{
-    math::{Vector3, Quaternion, Euler, Triangle}, 
-    loader::Gltf, 
-    object::Mesh, 
-    camera::{PerspectiveCamera, ObjectCamera}, 
-    scene::Scene, 
-    core::{Transformable, Geometrical, Object3d, RGB}, 
-    renderer::Event,
+    camera::{PerspectiveCamera, ObjectCamera}, core::{Transformable, Geometrical, Object3d, RGB}, geometry::{Box3, Cone}, loader::Gltf, math::{Vector3, Quaternion, Euler}, object::Mesh, renderer::Event, scene::Scene
 };
 
 pub struct GlRenderer {
@@ -62,79 +56,60 @@ impl Renderer for GlRenderer {
         self.scene.reset();
     }
     
-    fn add_from_file(
+    fn add_model(
         &mut self,
-        id: String,
-        name: &str
+        id: String
     ) -> Result<ModelRef, String> {
-        if let Ok(bytes) = fs::read(name) {
-            self.add_from_bytes(id, &bytes)
+        if id.starts_with("./maps") {
+            if let Ok(bytes) = fs::read(id) {
+                let mesh = Gltf::load_from_bytes(&bytes)?;
+                let rf = self.objects.len();
+        
+                self.objects.push(mesh.clone());
+                self.scene.add(mesh);
+
+                Ok(rf)
+            }
+            else {
+                Err("File not found".to_string())
+            }
+        }
+        else if id.starts_with("player-") {
+            let mesh = Mesh::new(
+                &Cone::new(0.6, 1.8)
+            );
+            let rf = self.objects.len();
+        
+            self.objects.push(mesh.clone());
+            self.scene.add(mesh);
+
+            Ok(rf)
+        }
+        else if id.starts_with("key-") {
+            let mesh = Mesh::new(
+                &Box3::new(1.0, 1.0, 1.0)
+            );
+            let rf = self.objects.len();
+        
+            self.objects.push(mesh.clone());
+            self.scene.add(mesh);
+
+            Ok(rf)
+        }
+        else if id.starts_with("exit-") {
+            let mesh = Mesh::new(
+                &Box3::new(2.0, 2.0, 2.0)
+            );
+            let rf = self.objects.len();
+        
+            self.objects.push(mesh.clone());
+            self.scene.add(mesh);
+
+            Ok(rf)
         }
         else {
-            Err("File not found".to_string())
+            Err("Unknown model".to_string())
         }
-    }
-
-    fn add_from_bytes(
-        &mut self,
-        _id: String,
-        bytes: &[u8]
-    ) -> Result<ModelRef, String> {
-        let mesh = Gltf::load_from_bytes(bytes)?;
-        let rf = self.objects.len();
-
-        self.objects.push(mesh.clone());
-        self.scene.add(mesh);
-
-        Ok(rf)
-    }
-
-    fn add_from_gltf(
-        &mut self,
-        _id: String,
-        doc: &gltf::Document,
-        buffers: &Vec<gltf::buffer::Data>
-    ) -> Result<ModelRef, String> {
-        let mesh = Gltf::load(doc, buffers)?;
-        let rf = self.objects.len();
-
-        self.objects.push(mesh.clone());
-        self.scene.add(mesh);
-
-        Ok(rf)
-    }
-
-    fn add_from_mesh(
-        &mut self,
-        _id: String,
-        _color: RGB,
-        mesh: Rc<RefCell<Mesh>>
-    ) -> Result<ModelRef, String> {
-        let rf = self.objects.len();
-
-        self.objects.push(mesh.clone());
-        self.scene.add(mesh);
-
-        Ok(rf)
-    }
-
-    fn add_from_triangles(
-        &mut self,
-        color: RGB,
-        triangles: Vec<Triangle>
-    ) -> Result<ModelRef, String> {
-        let rf = self.objects.len();
-
-        let mesh = Mesh::new(
-            &three_rs::geometry::Triangles::new(
-                triangles, color
-            )
-        );
-        
-        self.objects.push(mesh.clone());
-        self.scene.add(mesh);
-
-        Ok(rf)
     }
 
     fn add_from_linestrips(

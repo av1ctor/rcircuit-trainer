@@ -12,7 +12,7 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use brains_engine::env::Env;
-use brains_engine::game::{Game, GameOptions, ObjectFOV};
+use brains_engine::game::{Game, GameOptions, LevelOptions, ObjectFOV};
 use dqn::DqnOptions;
 use rand::{SeedableRng, Rng};
 use rand::rngs::StdRng;
@@ -57,9 +57,10 @@ fn main(
     let mut _pov = 0;
 
     let map_suffix = if LEARNING {"-training"} else {""};
+    let map_path = format!("./maps/level-0/map{}.glb", map_suffix);
 
     let (level_bytes, navmesh_bytes) = if let Ok(level_bytes) = 
-        std::fs::read(format!("./maps/level-0/map{}.glb", map_suffix)) {
+        std::fs::read(&map_path) {
         if let Ok(navmesh_bytes) = 
             std::fs::read(format!("./maps/level-0/navmesh{}.bin", map_suffix)) {
             (level_bytes, navmesh_bytes)
@@ -79,6 +80,9 @@ fn main(
         &level_bytes.to_vec(), 
         &navmesh_bytes.to_vec(),
         GameOptions {
+            level: LevelOptions {
+                name: map_path
+            },
             fov: ObjectFOV { 
                 rays: RAYS, 
                 angle: FOV, 
