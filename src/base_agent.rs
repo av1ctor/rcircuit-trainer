@@ -1,6 +1,5 @@
 use rand::{rngs::StdRng, Rng};
 use tch::Tensor;
-
 use crate::{replay_buffer::ReplayBuffer, dqn::{DqnOptions, DeepQNetwork}};
 
 #[derive(Clone)]

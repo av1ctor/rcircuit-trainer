@@ -1,7 +1,14 @@
 use std::{cell::RefCell, rc::Rc, fs};
 use brains_engine::renderer::{ModelRef, Renderer};
 use three_rs::{
-    camera::{PerspectiveCamera, ObjectCamera}, core::{Transformable, Geometrical, Object3d, RGB}, geometry::{Box3, Cone}, loader::Gltf, math::{Vector3, Quaternion, Euler}, object::Mesh, renderer::Event, scene::Scene
+    camera::{PerspectiveCamera, ObjectCamera}, 
+    core::{Transformable, Geometrical, Object3d, RGB}, 
+    geometry::{Box3, Cone}, 
+    loader::Gltf, 
+    math::{Vector3, Quaternion, Euler}, 
+    object::Mesh, 
+    renderer::Event, 
+    scene::Scene
 };
 
 pub struct GlRenderer {

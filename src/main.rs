@@ -11,8 +11,10 @@ use std::f32::consts::PI;
 use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
-use brains_engine::env::Env;
-use brains_engine::game::{Game, GameOptions, LevelOptions, ObjectFOV};
+use brains_engine::{
+    env::Env,
+    game::{Game, GameOptions, LevelOptions, ObjectFOV}
+};
 use dqn::DqnOptions;
 use rand::{SeedableRng, Rng};
 use rand::rngs::StdRng;
