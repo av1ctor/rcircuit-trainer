@@ -258,6 +258,8 @@ fn main(
             if steps % if LEARNING {12} else {6} == 0 {
                 game.render(&mut renderer);
             }
+
+            game.clear_events();
         }
 
         let win_rate = results.iter().rev().take(sample).sum::<usize>() as f32 / (sample as f32);
