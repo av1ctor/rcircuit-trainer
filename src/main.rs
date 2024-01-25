@@ -41,9 +41,9 @@ const REPLACE_TARGET_CNT: usize = 128;
 const GAMMA: f64 = 0.99;
 const EPSILON: f64 = 1.0;
 const EPSILON_MIN: f64 = 0.05;
-const EPSILON_DECAY: f64 = 5e-6;
+const EPSILON_DECAY: f64 = 1e-5;
 const NUM_HIDDEN: usize = 32;
-const MAX_STEPS: usize = 30000;
+const MAX_STEPS: usize = 10000;
 
 struct Player {
     last_thought: u32,
