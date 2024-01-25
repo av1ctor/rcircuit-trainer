@@ -5,7 +5,7 @@ use three_rs::{
     core::{Transformable, Geometrical, Object3d, RGB}, 
     geometry::{Box3, Cone}, 
     loader::Gltf, 
-    math::{Vector3, Quaternion, Euler}, 
+    math::{Vector3, Quaternion}, 
     object::Mesh, 
     renderer::Event, 
     scene::Scene
@@ -29,7 +29,12 @@ impl GlRenderer {
             let renderer = Rc::new(RefCell::new(
                 three_rs::renderer::GlRenderer::new("trainer", w, h)
             ));
-            let mut camera = PerspectiveCamera::new(75.0, (w as f32) / (h as f32), 0.1, 1000.0);
+            let mut camera = PerspectiveCamera::new(
+                75.0, 
+                (w as f32) / (h as f32), 
+                0.1, 
+                1000.0
+            );
             let scene = Scene::new(renderer.clone());
 
             camera.rotate_x(-0.5)
@@ -161,14 +166,16 @@ impl Renderer for GlRenderer {
         &mut self,
         rf: ModelRef
     ) {
-        self.objects[rf].borrow_mut().show();
+        self.objects[rf].borrow_mut()
+            .show();
     }
 
     fn hide_model(
         &mut self,
         rf: ModelRef
     ) {
-        self.objects[rf].borrow_mut().hide();
+        self.objects[rf].borrow_mut()
+            .hide();
     }
 
     fn set_vertices(
@@ -176,7 +183,8 @@ impl Renderer for GlRenderer {
         rf: ModelRef,
         vertices: Vec<Vector3>
     ) {
-        self.objects[rf].borrow_mut().set_positions(vertices);
+        self.objects[rf].borrow_mut()
+            .set_positions(vertices);
     }
 
     fn set_position(
@@ -184,7 +192,8 @@ impl Renderer for GlRenderer {
         rf: ModelRef,
         pos: &Vector3
     ) {
-        self.objects[rf].borrow_mut().set_position(pos.clone());
+        self.objects[rf].borrow_mut()
+            .set_position(pos.clone());
     }
 
     fn set_rotation(
@@ -192,15 +201,8 @@ impl Renderer for GlRenderer {
         rf: ModelRef,
         q: &Quaternion
     ) {
-        self.objects[rf].borrow_mut().set_rotation(q.clone());
-    }
-
-    fn set_rotation_from_euler(
-        &mut self,
-        rf: ModelRef,
-        euler: &Euler
-    ) {
-        self.objects[rf].borrow_mut().set_rotation_from_euler(euler.clone());
+        self.objects[rf].borrow_mut()
+            .set_rotation(q.clone());
     }
 
     fn set_scale(
@@ -208,12 +210,15 @@ impl Renderer for GlRenderer {
         rf: ModelRef,
         scale: &Vector3
     ) {
-        self.objects[rf].borrow_mut().set_scale(scale.clone());
+        self.objects[rf].borrow_mut()
+            .set_scale(scale.clone());
     }
 
     fn render(
         &mut self
     ) {
-        self.scene.render((&mut self.camera) as &mut dyn ObjectCamera);
+        self.scene.render(
+            (&mut self.camera) as &mut dyn ObjectCamera
+        );
     }
 }
