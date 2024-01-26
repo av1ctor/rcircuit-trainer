@@ -12,7 +12,7 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use brains_engine::{
-    asset::{GameAsset, GameAssetId}, env::Env, game::{Game, GameOptions, LevelOptions, ObjectFOV}, renderer::Renderer
+    asset::{GameAsset, GameAssetId}, env::Env, game::{Game, GameOptions, LevelOptions, ObjectFOV}, map::Map, renderer::Renderer
 };
 use dqn::DqnOptions;
 use rand::{SeedableRng, Rng};
@@ -78,8 +78,10 @@ fn main(
         .expect("Renderer initialization failed");
 
     let mut game = Game::new(
-        &level_bytes.to_vec(), 
-        &navmesh_bytes.to_vec(),
+        Map::new(
+            &level_bytes.to_vec(), 
+            &navmesh_bytes.to_vec()
+        ),
         GameOptions {
             level: LevelOptions {
                 num: 0
