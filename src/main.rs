@@ -12,8 +12,7 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use brains_engine::{
-    env::Env,
-    game::{Game, GameOptions, LevelOptions, ObjectFOV}
+    asset::{GameAsset, GameAssetId}, env::Env, game::{Game, GameOptions, LevelOptions, ObjectFOV}, renderer::Renderer
 };
 use dqn::DqnOptions;
 use rand::{SeedableRng, Rng};
@@ -83,7 +82,7 @@ fn main(
         &navmesh_bytes.to_vec(),
         GameOptions {
             level: LevelOptions {
-                name: map_path
+                num: 0
             },
             fov: ObjectFOV { 
                 rays: RAYS, 
@@ -115,6 +114,23 @@ fn main(
         replace_target_cnt: REPLACE_TARGET_CNT,
     };
     
+    for asset in game.get_assets() {
+        let asset = if asset.0 == GameAssetId::Level0 as usize {
+            (
+                asset.0,
+                GameAsset {
+                    path: Some(map_path.clone()),
+                }
+            )
+        }
+        else {
+            asset
+        };
+
+        renderer.load_asset(asset.0, &asset.1)
+            .expect(&format!("Asset not found: {}", asset.0));
+    }
+
     let mut agent = DdqnAgent::new(&options);
 
     if !LEARNING {

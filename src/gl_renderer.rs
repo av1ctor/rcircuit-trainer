@@ -1,5 +1,9 @@
-use std::{cell::RefCell, rc::Rc, fs};
-use brains_engine::renderer::{ModelRef, Renderer};
+use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
+use brains_engine::{
+    asset::{GameAsset, GameAssetId}, 
+    env::AssetId, 
+    renderer::{ModelRef, Renderer}
+};
 use three_rs::{
     camera::{PerspectiveCamera, ObjectCamera}, 
     core::{Transformable, Geometrical, Object3d, RGB}, 
@@ -18,6 +22,7 @@ pub struct GlRenderer {
     pub scene: Scene,
     pub camera: PerspectiveCamera,
     pub renderer: Rc<RefCell<three_rs::renderer::GlRenderer>>,
+    pub assets: HashMap<AssetId, Rc<RefCell<Mesh>>>,
 }
 
 impl GlRenderer {
@@ -49,6 +54,7 @@ impl GlRenderer {
                 scene,
                 camera,
                 renderer,
+                assets: HashMap::default(),
             })
         }
     }
@@ -60,67 +66,70 @@ impl GlRenderer {
     }
 }
 
-impl Renderer for GlRenderer {
+impl Renderer<GameAsset> for GlRenderer {
     fn reset(
         &mut self
     ) {
         self.objects = vec![];
         self.scene.reset();
     }
+
+    fn load_asset(
+        &mut self,
+        id: AssetId,
+        asset: &GameAsset
+    ) -> Result<(), String> {
+        match GameAssetId::from(id) {
+            GameAssetId::Level0 => {
+                if let Ok(bytes) = fs::read(asset.path.as_ref().unwrap()) {
+                    let mesh = Gltf::load_from_bytes(&bytes)?;
+                    self.assets.insert(id, mesh);
+                    Ok(())
+                }
+                else {
+                    Err("File not found".to_string())
+                }
+            },
+            GameAssetId::Player => {
+                let mesh = Mesh::new(
+                    &Cone::new(0.6, 1.8)
+                );
+                self.assets.insert(id, mesh);
+    
+                Ok(())
+            },
+            GameAssetId::Key => {
+                let mesh = Mesh::new(
+                    &Box3::new(1.0, 1.0, 1.0)
+                );
+                self.assets.insert(id, mesh);
+    
+                Ok(())
+            },
+            GameAssetId::Exit => {
+                let mesh = Mesh::new(
+                    &Box3::new(2.0, 2.0, 2.0)
+                );
+                self.assets.insert(id, mesh);
+    
+                Ok(())
+            },
+        }
+    }
     
     fn add_model(
         &mut self,
-        id: String
+        id: AssetId
     ) -> Result<ModelRef, String> {
-        if id.starts_with("./maps") {
-            if let Ok(bytes) = fs::read(id) {
-                let mesh = Gltf::load_from_bytes(&bytes)?;
-                let rf = self.objects.len();
-        
-                self.objects.push(mesh.clone());
-                self.scene.add(mesh);
-
-                Ok(rf)
-            }
-            else {
-                Err("File not found".to_string())
-            }
-        }
-        else if id.starts_with("player-") {
-            let mesh = Mesh::new(
-                &Cone::new(0.6, 1.8)
-            );
+        if let Some(mesh) = self.assets.get(&id) {
             let rf = self.objects.len();
-        
-            self.objects.push(mesh.clone());
-            self.scene.add(mesh);
-
-            Ok(rf)
-        }
-        else if id.starts_with("key-") {
-            let mesh = Mesh::new(
-                &Box3::new(1.0, 1.0, 1.0)
-            );
-            let rf = self.objects.len();
-        
-            self.objects.push(mesh.clone());
-            self.scene.add(mesh);
-
-            Ok(rf)
-        }
-        else if id.starts_with("exit-") {
-            let mesh = Mesh::new(
-                &Box3::new(2.0, 2.0, 2.0)
-            );
-            let rf = self.objects.len();
-        
-            self.objects.push(mesh.clone());
-            self.scene.add(mesh);
-
+            let cloned = Rc::new(RefCell::new(mesh.borrow().clone()));
+            self.objects.push(cloned.clone());
+            self.scene.add(cloned);
             Ok(rf)
         }
         else {
-            Err("Unknown model".to_string())
+            Err(format!("Asset not found: {}", id))
         }
     }
 
