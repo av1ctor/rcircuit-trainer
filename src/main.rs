@@ -12,7 +12,11 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use brains_engine::{
-    asset::{GameAsset, GameAssetId}, env::Env, game::{Game, GameOptions, LevelOptions, ObjectFOV}, map::Map, renderer::Renderer
+    asset::GameAssetType, 
+    env::{Asset, AssetData, AssetValue, Env}, 
+    game::{Game, GameOptions, LevelOptions, ObjectFOV}, 
+    map::Map, 
+    renderer::Renderer
 };
 use dqn::DqnOptions;
 use rand::{SeedableRng, Rng};
@@ -117,20 +121,20 @@ fn main(
     };
     
     for asset in game.get_assets() {
-        let asset = if asset.0 == GameAssetId::Level0 as usize {
-            (
-                asset.0,
-                GameAsset {
-                    path: Some(map_path.clone()),
-                }
+        let asset = if asset.typ == GameAssetType::Level as usize {
+            Asset::new(
+                asset.typ, 
+                AssetData::new(&[
+                    (&"path", &AssetValue::Text(map_path.clone()))
+                ])
             )
         }
         else {
             asset
         };
 
-        renderer.load_asset(asset.0, &asset.1)
-            .expect(&format!("Asset not found: {}", asset.0));
+        renderer.load_asset(&asset)
+            .expect(&format!("Asset not found: {}", asset.typ));
     }
 
     let mut agent = DdqnAgent::new(&options);

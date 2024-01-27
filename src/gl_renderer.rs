@@ -1,7 +1,7 @@
-use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
+use std::{cell::RefCell, fs, rc::Rc};
 use brains_engine::{
-    asset::{GameAsset, GameAssetId}, 
-    env::AssetId, 
+    asset::GameAssetType, 
+    env::{Asset, AssetRef, AssetValue}, 
     renderer::{ModelRef, Renderer}
 };
 use three_rs::{
@@ -22,7 +22,7 @@ pub struct GlRenderer {
     pub scene: Scene,
     pub camera: PerspectiveCamera,
     pub renderer: Rc<RefCell<three_rs::renderer::GlRenderer>>,
-    pub assets: HashMap<AssetId, Rc<RefCell<Mesh>>>,
+    pub assets: Vec<Rc<RefCell<Mesh>>>,
 }
 
 impl GlRenderer {
@@ -54,7 +54,7 @@ impl GlRenderer {
                 scene,
                 camera,
                 renderer,
-                assets: HashMap::default(),
+                assets: vec![],
             })
         }
     }
@@ -66,7 +66,7 @@ impl GlRenderer {
     }
 }
 
-impl Renderer<GameAsset> for GlRenderer {
+impl Renderer for GlRenderer {
     fn reset(
         &mut self
     ) {
@@ -76,41 +76,47 @@ impl Renderer<GameAsset> for GlRenderer {
 
     fn load_asset(
         &mut self,
-        id: AssetId,
-        asset: &GameAsset
+        asset: &Asset
     ) -> Result<(), String> {
-        match GameAssetId::from(id) {
-            GameAssetId::Level0 => {
-                if let Ok(bytes) = fs::read(asset.path.as_ref().unwrap()) {
-                    let mesh = Gltf::load_from_bytes(&bytes)?;
-                    self.assets.insert(id, mesh);
-                    Ok(())
-                }
-                else {
-                    Err("File not found".to_string())
+        match GameAssetType::from(asset.typ) {
+            GameAssetType::Level => {
+                match asset.data.0.get("path").unwrap() {
+                    AssetValue::Text(path) => {
+                        if let Ok(bytes) = fs::read(path) {
+                            let mesh = Gltf::load_from_bytes(&bytes)?;
+                            self.assets.push(mesh);
+                            Ok(())
+                        }
+                        else {
+                            Err("Path not found".to_string())
+                        }
+                    },
+                    _ => {
+                        return Err("Path not found".to_string());
+                    }
                 }
             },
-            GameAssetId::Player => {
+            GameAssetType::Player => {
                 let mesh = Mesh::new(
                     &Cone::new(0.6, 1.8)
                 );
-                self.assets.insert(id, mesh);
+                self.assets.push(mesh);
     
                 Ok(())
             },
-            GameAssetId::Key => {
+            GameAssetType::Key => {
                 let mesh = Mesh::new(
                     &Box3::new(1.0, 1.0, 1.0)
                 );
-                self.assets.insert(id, mesh);
+                self.assets.push(mesh);
     
                 Ok(())
             },
-            GameAssetId::Exit => {
+            GameAssetType::Exit => {
                 let mesh = Mesh::new(
                     &Box3::new(2.0, 2.0, 2.0)
                 );
-                self.assets.insert(id, mesh);
+                self.assets.push(mesh);
     
                 Ok(())
             },
@@ -119,18 +125,18 @@ impl Renderer<GameAsset> for GlRenderer {
     
     fn add_model(
         &mut self,
-        id: AssetId
+        asset_ref: AssetRef
     ) -> Result<ModelRef, String> {
-        if let Some(mesh) = self.assets.get(&id) {
-            let rf = self.objects.len();
-            let cloned = Rc::new(RefCell::new(mesh.borrow().clone()));
-            self.objects.push(cloned.clone());
-            self.scene.add(cloned);
-            Ok(rf)
+        if asset_ref >= self.assets.len() {
+            return Err(format!("Asset not found: {}", asset_ref));
         }
-        else {
-            Err(format!("Asset not found: {}", id))
-        }
+        
+        let mesh = &self.assets[asset_ref];
+        let rf = self.objects.len();
+        let cloned = Rc::new(RefCell::new(mesh.borrow().clone()));
+        self.objects.push(cloned.clone());
+        self.scene.add(cloned);
+        Ok(rf)
     }
 
     fn add_from_linestrips(
