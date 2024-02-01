@@ -26,7 +26,7 @@ use tch::{Tensor, Device};
 use gl_renderer::GlRenderer;
 use three_rs::{core::Transformable, renderer::Event};
 
-const LEARNING: bool = false;
+const LEARNING: bool = true;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
 const SCREEN_W: u32 = 1000;
 const SCREEN_H: u32 = 600;

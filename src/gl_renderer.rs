@@ -44,9 +44,7 @@ impl GlRenderer {
             let scene = Scene::new(renderer.clone());
 
             camera.rotate_x(-0.5)
-                .translate_y(15.0)
-                .translate_z(50.0)
-                .translate_x(15.0);
+                .translate_z(50.0);
 
             Ok(Self{
                 w: w as _,
