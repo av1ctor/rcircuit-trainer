@@ -2,6 +2,7 @@ use std::{cell::RefCell, fs, rc::Rc};
 use brains_engine::{
     asset::GameAssetType, 
     env::{Asset, AssetRef, AssetValue}, 
+    object::ObjectState, 
     renderer::{ModelRef, Renderer}
 };
 use three_rs::{
@@ -18,11 +19,11 @@ use three_rs::{
 pub struct GlRenderer {
     pub w: usize,
     pub h: usize,
+    pub assets: Vec<Rc<RefCell<Mesh>>>,
     pub objects: Vec<Rc<RefCell<Mesh>>>,
     pub scene: Scene,
     pub camera: PerspectiveCamera,
     pub renderer: Rc<RefCell<three_rs::renderer::GlRenderer>>,
-    pub assets: Vec<Rc<RefCell<Mesh>>>,
 }
 
 impl GlRenderer {
@@ -104,7 +105,7 @@ impl Renderer for GlRenderer {
     
                 Ok(())
             },
-            GameAssetType::Key => {
+            GameAssetType::Brain => {
                 let mesh = Mesh::new(
                     &Box3::new(1.0, 1.0, 1.0)
                 );
@@ -227,6 +228,14 @@ impl Renderer for GlRenderer {
     ) {
         self.objects[rf].borrow_mut()
             .set_scale(scale.clone());
+    }
+
+    fn change_state(
+        &mut self,
+        _model_ref: ModelRef,
+        _from: ObjectState,
+        _to: ObjectState
+    ) {
     }
 
     fn render(

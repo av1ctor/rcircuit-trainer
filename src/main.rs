@@ -174,6 +174,8 @@ fn main(
             players[i].obs = Tensor::from_slice(&obs[i]).to(Device::Cuda(0));
         }
 
+        game.render(&mut renderer, false);
+
         while running {
             let events = renderer.poll_events();
             for event in events {
@@ -277,11 +279,7 @@ fn main(
                 players[i].obs = next_obs_ts;
             }
 
-            if steps % if LEARNING {12} else {6} == 0 {
-                game.render(&mut renderer);
-            }
-
-            game.clear_events();
+            game.render(&mut renderer, steps % if LEARNING {12} else {6} != 0);            
         }
 
         let win_rate = results.iter().rev().take(sample).sum::<usize>() as f32 / (sample as f32);
