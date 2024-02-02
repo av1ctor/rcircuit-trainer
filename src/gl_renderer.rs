@@ -63,6 +63,19 @@ impl GlRenderer {
     ) -> Vec<Event> {
         self.renderer.borrow_mut().poll_events()
     }
+
+    pub fn ticks(
+        &mut self
+    ) -> u32 {
+        self.renderer.borrow_mut().ticks()
+    }
+
+    pub fn delay(
+        &mut self,
+        ms: u32
+    ) {
+        self.renderer.borrow_mut().delay(ms)
+    }
 }
 
 impl Renderer for GlRenderer {

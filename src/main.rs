@@ -31,6 +31,7 @@ const NUM_PLAYERS: usize = if LEARNING {1} else {4};
 const SCREEN_W: u32 = 1000;
 const SCREEN_H: u32 = 600;
 const FPS: f32 = 60.0; // frames per sec
+const TICKS_PER_RENDER: u32 = (1000.0 / FPS) as u32;
 const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
 const RAYS: usize = 15;
 const FOV: f32 = 180.0 * (PI / 180.0);
@@ -220,6 +221,8 @@ fn main(
                 }
             }
 
+            let ticks_initial = renderer.ticks();
+
             let mut actions = vec![None; game.options.num_players];
 
             let players_idx = gen_players_idx(&mut game, &mut rng);
@@ -279,7 +282,14 @@ fn main(
                 players[i].obs = next_obs_ts;
             }
 
-            game.render(&mut renderer, steps % if LEARNING {12} else {6} != 0);            
+            game.render(&mut renderer, if LEARNING {steps % 12 != 0} else {false});
+
+            if !LEARNING {
+                let ticks_elapsed = renderer.ticks() - ticks_initial;
+                if ticks_elapsed < TICKS_PER_RENDER {
+                    renderer.delay(TICKS_PER_RENDER - ticks_elapsed);
+                }
+            }          
         }
 
         let win_rate = results.iter().rev().take(sample).sum::<usize>() as f32 / (sample as f32);
