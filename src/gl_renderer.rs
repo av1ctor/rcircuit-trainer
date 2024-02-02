@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fs, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
 use brains_engine::{
     asset::GameAssetType, 
     env::{Asset, AssetRef, AssetValue}, 
@@ -19,7 +19,7 @@ use three_rs::{
 pub struct GlRenderer {
     pub w: usize,
     pub h: usize,
-    pub assets: Vec<Rc<RefCell<Mesh>>>,
+    pub assets: HashMap<AssetRef, Rc<RefCell<Mesh>>>,
     pub objects: Vec<Rc<RefCell<Mesh>>>,
     pub scene: Scene,
     pub camera: PerspectiveCamera,
@@ -53,7 +53,7 @@ impl GlRenderer {
                 scene,
                 camera,
                 renderer,
-                assets: vec![],
+                assets: HashMap::new(),
             })
         }
     }
@@ -75,6 +75,7 @@ impl Renderer for GlRenderer {
 
     fn load_asset(
         &mut self,
+        asset_ref: AssetRef,
         asset: &Asset
     ) -> Result<(), String> {
         match GameAssetType::from(asset.typ) {
@@ -83,7 +84,7 @@ impl Renderer for GlRenderer {
                     AssetValue::Text(path) => {
                         if let Ok(bytes) = fs::read(path) {
                             let mesh = Gltf::load_from_bytes(&bytes)?;
-                            self.assets.push(mesh);
+                            self.assets.insert(asset_ref, mesh);
                             Ok(())
                         }
                         else {
@@ -99,15 +100,15 @@ impl Renderer for GlRenderer {
                 let mesh = Mesh::new(
                     &Cone::new(0.6, 1.8)
                 );
-                self.assets.push(mesh);
+                self.assets.insert(asset_ref, mesh);
     
                 Ok(())
             },
-            GameAssetType::Brain => {
+            GameAssetType::Npc => {
                 let mesh = Mesh::new(
                     &Box3::new(1.0, 1.0, 1.0)
                 );
-                self.assets.push(mesh);
+                self.assets.insert(asset_ref, mesh);
     
                 Ok(())
             },
@@ -115,7 +116,7 @@ impl Renderer for GlRenderer {
                 let mesh = Mesh::new(
                     &Box3::new(2.0, 2.0, 2.0)
                 );
-                self.assets.push(mesh);
+                self.assets.insert(asset_ref, mesh);
     
                 Ok(())
             },
@@ -126,16 +127,16 @@ impl Renderer for GlRenderer {
         &mut self,
         asset_ref: AssetRef
     ) -> Result<ModelRef, String> {
-        if asset_ref >= self.assets.len() {
+        if let Some(mesh) = self.assets.get(&asset_ref) {
+            let rf = self.objects.len();
+            let cloned = Rc::new(RefCell::new(mesh.borrow().clone()));
+            self.objects.push(cloned.clone());
+            self.scene.add(cloned);
+            Ok(rf)
+        }
+        else {
             return Err(format!("Asset not found: {}", asset_ref));
         }
-        
-        let mesh = &self.assets[asset_ref];
-        let rf = self.objects.len();
-        let cloned = Rc::new(RefCell::new(mesh.borrow().clone()));
-        self.objects.push(cloned.clone());
-        self.scene.add(cloned);
-        Ok(rf)
     }
 
     fn add_from_linestrips(

@@ -26,7 +26,7 @@ use tch::{Tensor, Device};
 use gl_renderer::GlRenderer;
 use three_rs::{core::Transformable, renderer::Event};
 
-const LEARNING: bool = true;
+const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
 const SCREEN_W: u32 = 1000;
 const SCREEN_H: u32 = 600;
@@ -120,7 +120,7 @@ fn main(
         replace_target_cnt: REPLACE_TARGET_CNT,
     };
     
-    for asset in game.get_assets() {
+    for (asset_ref, asset) in game.get_assets() {
         let asset = if asset.typ == GameAssetType::Level as usize {
             Asset::new(
                 asset.typ, 
@@ -133,7 +133,7 @@ fn main(
             asset
         };
 
-        renderer.load_asset(&asset)
+        renderer.load_asset(asset_ref, &asset)
             .expect(&format!("Asset not found: {}", asset.typ));
     }
 
