@@ -14,9 +14,10 @@ use ddqn_agent::DdqnAgent;
 use brains_engine::{
     asset::GameAssetType, 
     env::{Asset, AssetData, AssetValue, Env}, 
-    game::{Game, GameOptions, LevelOptions, ObjectFOV}, 
+    game::{Game, GameOptions, LevelOptions}, 
     map::Map, 
-    renderer::Renderer
+    renderer::Renderer,
+    player::PlayerFOV
 };
 use dqn::DqnOptions;
 use rand::{SeedableRng, Rng};
@@ -92,7 +93,7 @@ fn main(
             level: LevelOptions {
                 num: 0
             },
-            fov: ObjectFOV { 
+            fov: PlayerFOV { 
                 rays: RAYS, 
                 angle: FOV, 
                 max_dist: 2.5,

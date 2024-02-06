@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
 use brains_engine::{
     asset::GameAssetType, 
     env::{Asset, AssetRef, AssetValue}, 
-    object::ObjectState, 
+    entity::EntityState, 
     renderer::{ModelRef, Renderer}
 };
 use three_rs::{
@@ -245,8 +245,8 @@ impl Renderer for ThreeRenderer {
     fn change_state(
         &mut self,
         _model_ref: ModelRef,
-        _from: ObjectState,
-        _to: ObjectState
+        _from: EntityState,
+        _to: EntityState
     ) {
         //println!("{}: {}->{}", _model_ref, _from, _to);
     }
