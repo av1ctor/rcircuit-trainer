@@ -16,7 +16,7 @@ use three_rs::{
     scene::Scene
 };
 
-pub struct GlRenderer {
+pub struct ThreeRenderer {
     pub w: usize,
     pub h: usize,
     pub assets: HashMap<AssetRef, Rc<RefCell<Mesh>>>,
@@ -26,7 +26,7 @@ pub struct GlRenderer {
     pub renderer: Rc<RefCell<three_rs::renderer::GlRenderer>>,
 }
 
-impl GlRenderer {
+impl ThreeRenderer {
     pub fn new(
         w: u32,
         h: u32
@@ -78,7 +78,7 @@ impl GlRenderer {
     }
 }
 
-impl Renderer for GlRenderer {
+impl Renderer for ThreeRenderer {
     fn reset(
         &mut self
     ) {
@@ -248,6 +248,7 @@ impl Renderer for GlRenderer {
         _from: ObjectState,
         _to: ObjectState
     ) {
+        //println!("{}: {}->{}", _model_ref, _from, _to);
     }
 
     fn render(

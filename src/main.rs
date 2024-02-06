@@ -4,7 +4,7 @@ mod agent;
 mod base_agent;
 mod dqnagent;
 mod ddqn_agent;
-mod gl_renderer;
+mod three_renderer;
 
 use std::collections::HashSet;
 use std::f32::consts::PI;
@@ -23,7 +23,7 @@ use rand::{SeedableRng, Rng};
 use rand::rngs::StdRng;
 use sdl2::keyboard::Scancode;
 use tch::{Tensor, Device};
-use gl_renderer::GlRenderer;
+use three_renderer::ThreeRenderer;
 use three_rs::{core::Transformable, renderer::Event};
 
 const LEARNING: bool = false;
@@ -50,6 +50,7 @@ const NUM_HIDDEN: usize = 32;
 const MAX_STEPS: usize = 10000;
 
 struct Player {
+    active: bool,
     last_thought: u32,
     steps_per_thought: u32,
     obs: Tensor,
@@ -79,7 +80,7 @@ fn main(
         panic!("Error loading level-0's model");
     };
 
-    let mut renderer = GlRenderer::new(SCREEN_W, SCREEN_H)
+    let mut renderer = ThreeRenderer::new(SCREEN_W, SCREEN_H)
         .expect("Renderer initialization failed");
 
     let mut game = Game::new(
@@ -147,6 +148,7 @@ fn main(
     let mut players = vec![];
     for _ in 0..NUM_PLAYERS {
         players.push(Player {
+            active: true,
             last_thought: 0,
             steps_per_thought: if LEARNING { 
                 1000 
@@ -231,21 +233,23 @@ fn main(
                 let p = players_idx[i];
                 let player = &mut players[p];
                 
-                player.last_thought += 1000;
-                if player.last_thought >= player.steps_per_thought {
-                    player.last_thought = 0;
+                if player.active {
+                    player.last_thought += 1000;
+                    if player.last_thought >= player.steps_per_thought {
+                        player.last_thought = 0;
 
-                    let action_ts = agent.choose_action(&player.obs, &mut rng)
-                        .unwrap_or(Tensor::from(game.random_action(&mut rng) as i64)
-                            .to(Device::Cuda(0)));
+                        let action_ts = agent.choose_action(&player.obs, &mut rng)
+                            .unwrap_or(Tensor::from(game.random_action(&mut rng) as i64)
+                                .to(Device::Cuda(0)));
 
-                    let mut action = vec![0i64; 1];
-                    action_ts.copy_data(&mut action, 1);
-                    actions[p] = Some(action[0] as usize);
+                        let mut action = vec![0i64; 1];
+                        action_ts.copy_data(&mut action, 1);
+                        actions[p] = Some(action[0] as usize);
+                    }
                 }
             }
 
-            let step = game.step(&actions, DELTA_TIME, &mut renderer);
+            let step = game.step(&actions, DELTA_TIME, &mut renderer, &mut rng);
             steps += 1;
 
             running = !step.terminated && !step.timedout;
@@ -279,6 +283,7 @@ fn main(
                     }
                 }
 
+                players[i].active = players[0].active;
                 players[i].obs = next_obs_ts;
             }
 
