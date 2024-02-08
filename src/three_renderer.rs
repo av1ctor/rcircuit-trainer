@@ -1,8 +1,9 @@
 use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
 use brains_engine::{
     asset::GameAssetType, 
-    env::{Asset, AssetRef, AssetValue}, 
+    consts, 
     entity::EntityState, 
+    env::{Asset, AssetRef, AssetValue}, 
     renderer::{ModelRef, Renderer}
 };
 use three_rs::{
@@ -19,8 +20,8 @@ use three_rs::{
 pub struct ThreeRenderer {
     pub w: usize,
     pub h: usize,
-    pub assets: HashMap<AssetRef, Rc<RefCell<Mesh>>>,
-    pub objects: Vec<Rc<RefCell<Mesh>>>,
+    pub assets: HashMap<AssetRef, (GameAssetType, Rc<RefCell<Mesh>>)>,
+    pub objects: Vec<(AssetRef, Rc<RefCell<Mesh>>)>,
     pub scene: Scene,
     pub camera: PerspectiveCamera,
     pub renderer: Rc<RefCell<three_rs::renderer::GlRenderer>>,
@@ -97,7 +98,7 @@ impl Renderer for ThreeRenderer {
                     AssetValue::Text(path) => {
                         if let Ok(bytes) = fs::read(path) {
                             let mesh = Gltf::load_from_bytes(&bytes)?;
-                            self.assets.insert(asset_ref, mesh);
+                            self.assets.insert(asset_ref, (GameAssetType::Level, mesh));
                             Ok(())
                         }
                         else {
@@ -111,25 +112,25 @@ impl Renderer for ThreeRenderer {
             },
             GameAssetType::Player => {
                 let mesh = Mesh::new(
-                    &Cone::new(0.6, 1.8)
+                    &Cone::new(consts::PLAYER_WIDTH, consts::PLAYER_HEIGHT)
                 );
-                self.assets.insert(asset_ref, mesh);
+                self.assets.insert(asset_ref, (GameAssetType::Player, mesh));
     
                 Ok(())
             },
             GameAssetType::Npc => {
                 let mesh = Mesh::new(
-                    &Box3::new(1.0, 1.0, 1.0)
+                    &Box3::new(consts::NPC_WIDTH, consts::NPC_HEIGHT, consts::NPC_WIDTH / 2.0)
                 );
-                self.assets.insert(asset_ref, mesh);
+                self.assets.insert(asset_ref, (GameAssetType::Npc, mesh));
     
                 Ok(())
             },
             GameAssetType::Exit => {
                 let mesh = Mesh::new(
-                    &Box3::new(2.0, 2.0, 2.0)
+                    &Box3::new(consts::EXIT_WIDTH, consts::EXIT_HEIGHT, consts::EXIT_WIDTH / 2.0)
                 );
-                self.assets.insert(asset_ref, mesh);
+                self.assets.insert(asset_ref, (GameAssetType::Exit, mesh));
     
                 Ok(())
             },
@@ -142,8 +143,8 @@ impl Renderer for ThreeRenderer {
     ) -> Result<ModelRef, String> {
         if let Some(mesh) = self.assets.get(&asset_ref) {
             let rf = self.objects.len();
-            let cloned = Rc::new(RefCell::new(mesh.borrow().clone()));
-            self.objects.push(cloned.clone());
+            let cloned = Rc::new(RefCell::new(mesh.1.borrow().clone()));
+            self.objects.push((asset_ref, cloned.clone()));
             self.scene.add(cloned);
             Ok(rf)
         }
@@ -165,7 +166,7 @@ impl Renderer for ThreeRenderer {
             )
         );
         
-        self.objects.push(mesh.clone());
+        self.objects.push((usize::MAX, mesh.clone()));
         self.scene.add(mesh);
 
         Ok(rf)
@@ -184,7 +185,7 @@ impl Renderer for ThreeRenderer {
             )
         );
         
-        self.objects.push(mesh.clone());
+        self.objects.push((usize::MAX, mesh.clone()));
         self.scene.add(mesh);
 
         Ok(rf)
@@ -194,7 +195,7 @@ impl Renderer for ThreeRenderer {
         &mut self,
         rf: ModelRef
     ) {
-        self.objects[rf].borrow_mut()
+        self.objects[rf].1.borrow_mut()
             .show();
     }
 
@@ -202,47 +203,65 @@ impl Renderer for ThreeRenderer {
         &mut self,
         rf: ModelRef
     ) {
-        self.objects[rf].borrow_mut()
+        self.objects[rf].1.borrow_mut()
             .hide();
     }
 
-    fn set_vertices(
+    fn set_model_vertices(
         &mut self,
         rf: ModelRef,
         vertices: Vec<Vector3>
     ) {
-        self.objects[rf].borrow_mut()
+        self.objects[rf].1.borrow_mut()
             .set_positions(vertices);
     }
 
-    fn set_position(
+    fn set_model_position(
         &mut self,
         rf: ModelRef,
         pos: &Vector3
     ) {
-        self.objects[rf].borrow_mut()
-            .set_position(pos.clone());
+        let obj = &mut self.objects[rf];
+
+        let translate = if obj.0 != usize::MAX {
+            let asset = self.assets.get(&obj.0).unwrap();
+            match asset.0 {
+                GameAssetType::Level => 
+                    Vector3::zero(),
+                GameAssetType::Player => 
+                    Vector3::new(0.0, consts::PLAYER_HEIGHT / 2.0, 0.0),
+                GameAssetType::Npc => 
+                    Vector3::new(0.0, consts::NPC_HEIGHT / 2.0, 0.0),
+                GameAssetType::Exit => 
+                    Vector3::new(0.0, consts::EXIT_HEIGHT / 2.0, 0.0),
+            }
+        }
+        else {
+            Vector3::zero()
+        };
+
+        obj.1.borrow_mut().set_position(pos.add(&translate));
     }
 
-    fn set_rotation(
+    fn set_model_rotation(
         &mut self,
         rf: ModelRef,
         q: &Quaternion
     ) {
-        self.objects[rf].borrow_mut()
+        self.objects[rf].1.borrow_mut()
             .set_rotation(q.clone());
     }
 
-    fn set_scale(
+    fn set_model_scale(
         &mut self,
         rf: ModelRef,
         scale: &Vector3
     ) {
-        self.objects[rf].borrow_mut()
+        self.objects[rf].1.borrow_mut()
             .set_scale(scale.clone());
     }
 
-    fn change_state(
+    fn change_model_state(
         &mut self,
         _model_ref: ModelRef,
         _from: EntityState,
