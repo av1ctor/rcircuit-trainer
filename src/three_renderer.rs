@@ -1,9 +1,10 @@
 use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
 use brains_engine::{
-    asset::GameAssetType, 
     consts, 
     entity::EntityState, 
-    env::{Asset, AssetRef, AssetValue}, 
+};
+use neuralarena_cdk::models::{
+    assets::{Asset, AssetRef, AssetType, AssetValue}, 
     renderer::{ModelRef, Renderer}
 };
 use three_rs::{
@@ -20,7 +21,7 @@ use three_rs::{
 pub struct ThreeRenderer {
     pub w: usize,
     pub h: usize,
-    pub assets: HashMap<AssetRef, (GameAssetType, Rc<RefCell<Mesh>>)>,
+    pub assets: HashMap<AssetRef, (AssetType, Rc<RefCell<Mesh>>)>,
     pub objects: Vec<(AssetRef, Rc<RefCell<Mesh>>)>,
     pub scene: Scene,
     pub camera: PerspectiveCamera,
@@ -79,7 +80,7 @@ impl ThreeRenderer {
     }
 }
 
-impl Renderer for ThreeRenderer {
+impl Renderer<EntityState> for ThreeRenderer {
     fn reset(
         &mut self
     ) {
@@ -92,13 +93,13 @@ impl Renderer for ThreeRenderer {
         asset_ref: AssetRef,
         asset: &Asset
     ) -> Result<(), String> {
-        match GameAssetType::from(asset.typ) {
-            GameAssetType::Level => {
+        match asset.typ {
+            AssetType::Level => {
                 match asset.data.0.get("path").unwrap() {
                     AssetValue::Text(path) => {
                         if let Ok(bytes) = fs::read(path) {
                             let mesh = Gltf::load_from_bytes(&bytes)?;
-                            self.assets.insert(asset_ref, (GameAssetType::Level, mesh));
+                            self.assets.insert(asset_ref, (AssetType::Level, mesh));
                             Ok(())
                         }
                         else {
@@ -110,27 +111,27 @@ impl Renderer for ThreeRenderer {
                     }
                 }
             },
-            GameAssetType::Player => {
+            AssetType::Player => {
                 let mesh = Mesh::new(
                     &Cone::new(consts::PLAYER_WIDTH, consts::PLAYER_HEIGHT)
                 );
-                self.assets.insert(asset_ref, (GameAssetType::Player, mesh));
+                self.assets.insert(asset_ref, (AssetType::Player, mesh));
     
                 Ok(())
             },
-            GameAssetType::Npc => {
+            AssetType::Npc => {
                 let mesh = Mesh::new(
                     &Box3::new(consts::NPC_WIDTH, consts::NPC_HEIGHT, consts::NPC_WIDTH / 2.0)
                 );
-                self.assets.insert(asset_ref, (GameAssetType::Npc, mesh));
+                self.assets.insert(asset_ref, (AssetType::Npc, mesh));
     
                 Ok(())
             },
-            GameAssetType::Exit => {
+            AssetType::Object => {
                 let mesh = Mesh::new(
                     &Box3::new(consts::EXIT_WIDTH, consts::EXIT_HEIGHT, consts::EXIT_WIDTH / 2.0)
                 );
-                self.assets.insert(asset_ref, (GameAssetType::Exit, mesh));
+                self.assets.insert(asset_ref, (AssetType::Object, mesh));
     
                 Ok(())
             },
@@ -226,13 +227,13 @@ impl Renderer for ThreeRenderer {
         let translate = if obj.0 != usize::MAX {
             let asset = self.assets.get(&obj.0).unwrap();
             match asset.0 {
-                GameAssetType::Level => 
+                AssetType::Level => 
                     Vector3::zero(),
-                GameAssetType::Player => 
+                AssetType::Player => 
                     Vector3::new(0.0, consts::PLAYER_HEIGHT / 2.0, 0.0),
-                GameAssetType::Npc => 
+                AssetType::Npc => 
                     Vector3::new(0.0, consts::NPC_HEIGHT / 2.0, 0.0),
-                GameAssetType::Exit => 
+                AssetType::Object => 
                     Vector3::new(0.0, consts::EXIT_HEIGHT / 2.0, 0.0),
             }
         }

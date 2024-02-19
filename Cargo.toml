@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 tch = "0.13.0"
 rand = "0.8.5"
+neuralarena-cdk = {version = "0.1.0", path = "../neuralarena-cdk"}
 brains-engine = {version = "0.1.0", path = "../brains-engine"}
 three-rs = {version = "0.1.0", path = "../three-rs", features = ["renderer"]}
 gltf = {version = "1.4.0", features = ["import"]}

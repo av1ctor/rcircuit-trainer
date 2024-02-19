@@ -12,14 +12,16 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use brains_engine::{
-    asset::GameAssetType, 
-    env::{Asset, AssetData, AssetValue, Env}, 
     game::{Game, GameOptions, LevelOptions}, 
     map::Map, 
-    renderer::Renderer,
     player::PlayerFOV
 };
 use dqn::DqnOptions;
+use neuralarena_cdk::models::{
+    assets::{Asset, AssetData, AssetType, AssetValue}, 
+    env::Env, 
+    renderer::Renderer
+};
 use rand::{SeedableRng, Rng};
 use rand::rngs::StdRng;
 use sdl2::keyboard::Scancode;
@@ -123,8 +125,8 @@ fn main(
         replace_target_cnt: REPLACE_TARGET_CNT,
     };
     
-    for (asset_ref, asset) in game.get_assets() {
-        let asset = if asset.typ == GameAssetType::Level as usize {
+    for (asset_ref, asset) in game.get_assets(&"{}".to_string()) {
+        let asset = if asset.typ == AssetType::Level {
             Asset::new(
                 asset.typ, 
                 AssetData::new(&[
@@ -137,7 +139,7 @@ fn main(
         };
 
         renderer.load_asset(asset_ref, &asset)
-            .expect(&format!("Asset not found: {}", asset.typ));
+            .expect(&format!("Asset not found: {}", asset_ref));
     }
 
     let mut agent = DdqnAgent::new(&options);
