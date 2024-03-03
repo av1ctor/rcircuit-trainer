@@ -125,7 +125,9 @@ fn main(
         replace_target_cnt: REPLACE_TARGET_CNT,
     };
     
-    for (asset_ref, asset) in game.get_assets(&"{}".to_string()) {
+    let players_paths = vec!["".to_string(); NUM_PLAYERS];
+    
+    for (asset_ref, asset) in game.get_assets(&"{}".to_string(), &players_paths) {
         let asset = if asset.typ == AssetType::Level {
             Asset::new(
                 asset.typ, 
