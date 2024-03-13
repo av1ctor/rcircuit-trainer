@@ -94,12 +94,12 @@ impl Renderer<EntityState> for ThreeRenderer {
         asset: &Asset
     ) -> Result<(), String> {
         match asset.typ {
-            AssetType::Level => {
+            AssetType::Map => {
                 match asset.data.0.get("path").unwrap() {
                     AssetValue::Text(path) => {
                         if let Ok(bytes) = fs::read(path) {
                             let mesh = Gltf::load_from_bytes(&bytes)?;
-                            self.assets.insert(asset_ref, (AssetType::Level, mesh));
+                            self.assets.insert(asset_ref, (AssetType::Map, mesh));
                             Ok(())
                         }
                         else {
@@ -227,7 +227,7 @@ impl Renderer<EntityState> for ThreeRenderer {
         let translate = if obj.0 != usize::MAX {
             let asset = self.assets.get(&obj.0).unwrap();
             match asset.0 {
-                AssetType::Level => 
+                AssetType::Map => 
                     Vector3::zero(),
                 AssetType::Player => 
                     Vector3::new(0.0, consts::PLAYER_HEIGHT / 2.0, 0.0),

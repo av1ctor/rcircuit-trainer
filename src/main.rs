@@ -12,7 +12,8 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use brains_engine::{
-    game::{Game, GameOptions, LevelOptions}, 
+    asset::GameAssetRef, 
+    game::{Game, GameOptions, MapInfo}, 
     map::Map, 
     player::PlayerFOV
 };
@@ -67,12 +68,12 @@ fn main(
     let mut _pov = 0;
 
     let map_suffix = if LEARNING {"-training"} else {""};
-    let map_path = format!("./maps/level-0/map{}.glb", map_suffix);
+    let map_path = format!("./maps/0/map{}.glb", map_suffix);
 
     let (level_bytes, navmesh_bytes) = if let Ok(level_bytes) = 
         std::fs::read(&map_path) {
         if let Ok(navmesh_bytes) = 
-            std::fs::read(format!("./maps/level-0/navmesh{}.bin", map_suffix)) {
+            std::fs::read(format!("./maps/0/navmesh{}.bin", map_suffix)) {
             (level_bytes, navmesh_bytes)
         }
         else {
@@ -91,10 +92,11 @@ fn main(
             &level_bytes.to_vec(), 
             &navmesh_bytes.to_vec()
         ),
+        MapInfo {
+            map_id: GameAssetRef::Map0 as usize,
+            num_keys: 0,
+        },
         GameOptions {
-            level: LevelOptions {
-                num: 0
-            },
             fov: PlayerFOV { 
                 rays: RAYS, 
                 angle: FOV, 
@@ -127,8 +129,9 @@ fn main(
     
     let players_paths = vec!["".to_string(); NUM_PLAYERS];
     
-    for (asset_ref, asset) in game.get_assets(&"{}".to_string(), &players_paths) {
-        let asset = if asset.typ == AssetType::Level {
+    for (asset_ref, asset) in game.get_assets(
+        &"{}".to_string(), 0, &players_paths) {
+        let asset = if asset.typ == AssetType::Map {
             Asset::new(
                 asset.typ, 
                 AssetData::new(&[
