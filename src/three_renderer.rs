@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, fs, rc::Rc};
 use brains_engine::{
     consts, 
-    entity::EntityState, 
+    entities::EntityState, 
 };
 use neuralarena_cdk::models::{
     assets::{Asset, AssetRef, AssetType, AssetValue}, 
@@ -10,7 +10,7 @@ use neuralarena_cdk::models::{
 use three_rs::{
     camera::{PerspectiveCamera, ObjectCamera}, 
     core::{Transformable, Geometrical, Object3d, RGB}, 
-    geometry::{Box3, Cone}, 
+    geometry::Box3, 
     loader::Gltf, 
     math::{Vector3, Quaternion}, 
     object::Mesh, 
@@ -113,7 +113,7 @@ impl Renderer<EntityState> for ThreeRenderer {
             },
             AssetType::Player => {
                 let mesh = Mesh::new(
-                    &Cone::new(consts::PLAYER_WIDTH, consts::PLAYER_HEIGHT)
+                    &Box3::new(consts::PLAYER_WIDTH, consts::PLAYER_HEIGHT, consts::PLAYER_WIDTH / 2.0)
                 );
                 self.assets.insert(asset_ref, (AssetType::Player, mesh));
     

@@ -12,10 +12,10 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use brains_engine::{
-    asset::GameAssetRef, 
-    game::{Game, GameOptions, MapInfo}, 
+    engine::asset::GameAssetRef, 
+    engine::{Game, GameOptions, MapInfo}, 
     map::Map, 
-    player::PlayerFOV
+    entities::PlayerFOV
 };
 use dqn::DqnOptions;
 use neuralarena_cdk::models::{
@@ -30,7 +30,7 @@ use tch::{Tensor, Device};
 use three_renderer::ThreeRenderer;
 use three_rs::{core::Transformable, renderer::Event};
 
-const LEARNING: bool = false;
+const LEARNING: bool = true;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
 const SCREEN_W: u32 = 1000;
 const SCREEN_H: u32 = 600;
@@ -107,7 +107,6 @@ fn main(
             player_radius: PLAYER_RADIUS,
             debug: LEARNING,
             training: LEARNING,
-            max_steps: MAX_STEPS,
         }
     );
 
@@ -175,9 +174,8 @@ fn main(
     let mut eps = 0;
     'main: while eps < MAX_EPISODES {
         let mut score = 0.0f32;
-
         let mut steps = 0;
-        let mut running = true;
+        let mut finished = false;
 
         let obs = &game.reset(&mut renderer, &mut rng);
         for i in 0..game.options.num_players {
@@ -187,7 +185,7 @@ fn main(
 
         game.render(&mut renderer, false);
 
-        while running {
+        while !finished {
             let events = renderer.poll_events();
             for event in events {
                 match event {
@@ -258,14 +256,16 @@ fn main(
             }
 
             let step = game.step(&actions, DELTA_TIME, &mut renderer, &mut rng);
+            
             steps += 1;
+            let timedout = steps >= MAX_STEPS;
+            finished = timedout || step.terminated;
 
-            running = !step.terminated && !step.timedout;
-            if !running {
+            if finished {
                 results.push(if step.winner.is_some() {1} else {0});
             }
 
-            if LEARNING {
+            if LEARNING && step.players.len() > 0 {
                 score += step.players[0].reward;
             }
 
@@ -284,7 +284,7 @@ fn main(
                             &step.players[0].reward.into(), 
                             &next_obs_ts, 
                             &step.terminated.into(),
-                            &step.timedout.into()
+                            &timedout.into()
                         );
 
                         agent.learn(&mut rng);
