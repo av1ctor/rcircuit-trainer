@@ -11,7 +11,7 @@ use std::f32::consts::PI;
 use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
-use brains_engine::{
+use rcircuit_engine::{
     engine::asset::GameAssetRef, 
     engine::{Game, GameOptions, MapInfo}, 
     map::Map, 
@@ -231,13 +231,15 @@ fn main(
 
             let ticks_initial = renderer.ticks();
 
-            let mut actions = vec![None; game.options.num_players];
+            let mut actions = vec![(0usize, None); game.options.num_players];
 
             let players_idx = gen_players_idx(&mut game, &mut rng);
             
             for i in 0..game.options.num_players {
                 let p = players_idx[i];
                 let player = &mut players[p];
+
+                actions[i].0 = p;
                 
                 if player.active {
                     player.last_thought += 1000;
@@ -250,7 +252,7 @@ fn main(
 
                         let mut action = vec![0i64; 1];
                         action_ts.copy_data(&mut action, 1);
-                        actions[p] = Some(action[0] as usize);
+                        actions[i].1 = Some(action[0] as usize);
                     }
                 }
             }
@@ -275,7 +277,7 @@ fn main(
 
                 if LEARNING {
                     if players[0].last_thought == 0 {
-                        let action_ts = Tensor::from_slice(&[actions[0].unwrap() as i64])
+                        let action_ts = Tensor::from_slice(&[actions[0].1.unwrap() as i64])
                             .to(Device::Cuda(0));
 
                         agent.store_transition(

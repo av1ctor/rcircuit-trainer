@@ -126,38 +126,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "brains-engine"
-version = "0.1.0"
-dependencies = [
- "candid",
- "circular-buffer",
- "dodgy",
- "glam",
- "gltf",
- "navmesh-rs",
- "neuralarena-cdk",
- "rand",
- "rmp-serde",
- "serde",
- "strum",
- "strum_macros",
- "three-rs",
-]
-
-[[package]]
-name = "brains-trainer"
-version = "0.1.0"
-dependencies = [
- "brains-engine",
- "gltf",
- "neuralarena-cdk",
- "rand",
- "sdl2",
- "tch",
- "three-rs",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -958,6 +926,38 @@ name = "rawpointer"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60a357793950651c4ed0f3f52338f53b2f809f32d83a07f72909fa13e4c6c1e3"
+
+[[package]]
+name = "rcircuit-engine"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "circular-buffer",
+ "dodgy",
+ "glam",
+ "gltf",
+ "navmesh-rs",
+ "neuralarena-cdk",
+ "rand",
+ "rmp-serde",
+ "serde",
+ "strum",
+ "strum_macros",
+ "three-rs",
+]
+
+[[package]]
+name = "rcircuit-trainer"
+version = "0.1.0"
+dependencies = [
+ "gltf",
+ "neuralarena-cdk",
+ "rand",
+ "rcircuit-engine",
+ "sdl2",
+ "tch",
+ "three-rs",
+]
 
 [[package]]
 name = "recastnavigation-sys"
