@@ -30,7 +30,7 @@ use tch::{Tensor, Device};
 use three_renderer::ThreeRenderer;
 use three_rs::{core::Transformable, renderer::Event};
 
-const LEARNING: bool = true;
+const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
 const SCREEN_W: u32 = 1000;
 const SCREEN_H: u32 = 600;
@@ -126,15 +126,16 @@ fn main(
         replace_target_cnt: REPLACE_TARGET_CNT,
     };
     
-    let players_paths = vec!["".to_string(); NUM_PLAYERS];
-    
     for (asset_ref, asset) in game.get_assets(
-        &"{}".to_string(), 0, &players_paths) {
+            None, 
+            0, 
+            &vec![None; NUM_PLAYERS]
+        ) {
         let asset = if asset.typ == AssetType::Map {
             Asset::new(
                 asset.typ, 
                 AssetData::new(&[
-                    (&"path", &AssetValue::Text(map_path.clone()))
+                    (&"model_url", &AssetValue::Text(map_path.clone()))
                 ])
             )
         }
@@ -183,7 +184,7 @@ fn main(
             players[i].obs = Tensor::from_slice(&obs[i]).to(Device::Cuda(0));
         }
 
-        game.render(&mut renderer, false);
+        game.render(&mut renderer, 0.0);
 
         while !finished {
             let events = renderer.poll_events();
@@ -297,7 +298,7 @@ fn main(
                 players[i].obs = next_obs_ts;
             }
 
-            game.render(&mut renderer, if LEARNING {steps % 12 != 0} else {false});
+            game.render(&mut renderer, if LEARNING {if steps % 12 != 0 {0.0} else {1.0}} else {1.0});
 
             if !LEARNING {
                 let ticks_elapsed = renderer.ticks() - ticks_initial;

@@ -95,7 +95,7 @@ impl Renderer<EntityState> for ThreeRenderer {
     ) -> Result<(), String> {
         match asset.typ {
             AssetType::Map => {
-                match asset.data.0.get("path").unwrap() {
+                match asset.data.0.get("model_url").unwrap() {
                     AssetValue::Text(path) => {
                         if let Ok(bytes) = fs::read(path) {
                             let mesh = Gltf::load_from_bytes(&bytes)?;
@@ -277,5 +277,12 @@ impl Renderer<EntityState> for ThreeRenderer {
         self.scene.render(
             (&mut self.camera) as &mut dyn ObjectCamera
         );
+    }
+    
+    fn update(
+        &mut self,
+        _delta_time: f32
+    ) {
+        
     }
 }
