@@ -18,6 +18,9 @@ use three_rs::{
     scene::Scene
 };
 
+const PLAYER_WIDTH: f32 = 1.0;
+const PLAYER_HEIGHT: f32 = 1.8;
+
 pub struct ThreeRenderer {
     pub w: usize,
     pub h: usize,
@@ -113,7 +116,7 @@ impl Renderer<EntityState> for ThreeRenderer {
             },
             AssetType::Player => {
                 let mesh = Mesh::new(
-                    &Box3::new(consts::PLAYER_WIDTH, consts::PLAYER_HEIGHT, consts::PLAYER_WIDTH / 2.0)
+                    &Box3::new(PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_WIDTH / 2.0)
                 );
                 self.assets.insert(asset_ref, (AssetType::Player, mesh));
     
@@ -230,7 +233,7 @@ impl Renderer<EntityState> for ThreeRenderer {
                 AssetType::Map => 
                     Vector3::zero(),
                 AssetType::Player => 
-                    Vector3::new(0.0, consts::PLAYER_HEIGHT / 2.0, 0.0),
+                    Vector3::new(0.0, PLAYER_HEIGHT / 2.0, 0.0),
                 AssetType::Npc => 
                     Vector3::new(0.0, consts::NPC_HEIGHT / 2.0, 0.0),
                 AssetType::Object => 

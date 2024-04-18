@@ -1,0 +1,208 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v4.0.44",
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "Plane",
+      "scale": [
+        50,
+        1,
+        50
+      ]
+    },
+    {
+      "name": "xsl.003",
+      "translation": [
+        13.208938598632812,
+        3.3273136615753174,
+        32.764610290527344
+      ]
+    },
+    {
+      "name": "xsl.002",
+      "translation": [
+        42.73405838012695,
+        0,
+        44.879661560058594
+      ]
+    },
+    {
+      "name": "xsl.001",
+      "translation": [
+        9.380620956420898,
+        18.2313232421875,
+        -1.4351511001586914
+      ]
+    },
+    {
+      "name": "psl.004",
+      "translation": [
+        -3.6855697631835938,
+        0,
+        44.811912536621094
+      ]
+    },
+    {
+      "name": "psl.003",
+      "translation": [
+        41.81962585449219,
+        0,
+        -21.716629028320312
+      ]
+    },
+    {
+      "name": "psl.002",
+      "translation": [
+        4.98387336730957,
+        0,
+        17.70343780517578
+      ]
+    },
+    {
+      "name": "psl.001",
+      "translation": [
+        -12.94644546508789,
+        0,
+        -23.44070053100586
+      ]
+    },
+    {
+      "name": "ksl.004",
+      "translation": [
+        -5.824787139892578,
+        0,
+        -24.1497745513916
+      ]
+    },
+    {
+      "name": "ksl.003",
+      "translation": [
+        43.10348892211914,
+        0,
+        41.53472900390625
+      ]
+    },
+    {
+      "name": "ksl.002",
+      "translation": [
+        36.82375717163086,
+        18.387868881225586,
+        -39.26447677612305
+      ]
+    },
+    {
+      "name": "ksl.001",
+      "translation": [
+        -39.4019775390625,
+        11.355301856994629,
+        32.55593490600586
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Plane",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 1801,
+      "max": [
+        1,
+        18.387447357177734,
+        1
+      ],
+      "min": [
+        -1,
+        0,
+        -1
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1801,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 1801,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5123,
+      "count": 6144,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 21612,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 21612,
+      "byteOffset": 21612,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 14408,
+      "byteOffset": 43224,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12288,
+      "byteOffset": 57632,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "map_data.bin",
+      "byteLength": 69920
+    }
+  ]
+}

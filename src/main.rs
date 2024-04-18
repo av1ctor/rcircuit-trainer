@@ -20,7 +20,7 @@ use rcircuit_engine::{
 use dqn::DqnOptions;
 use neuralarena_cdk::models::{
     assets::{Asset, AssetData, AssetType, AssetValue}, 
-    env::Env, 
+    env::{Env, EnvPlayerOptions}, 
     renderer::Renderer
 };
 use rand::{SeedableRng, Rng};
@@ -32,14 +32,14 @@ use three_rs::{core::Transformable, renderer::Event};
 
 const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
+const MAP_NUM: usize = 2;
 const SCREEN_W: u32 = 1000;
 const SCREEN_H: u32 = 600;
-const FPS: f32 = 60.0; // frames per sec
+const FPS: f32 = 60.0*3.0; // frames per sec
 const TICKS_PER_RENDER: u32 = (1000.0 / FPS) as u32;
-const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
+const DELTA_TIME: f32 = if LEARNING {1.0} else {600.0 / FPS};
 const RAYS: usize = 15;
 const FOV: f32 = 180.0 * (PI / 180.0);
-const PLAYER_RADIUS: f32 = 0.5;
 
 const REPLAY_BUFFER_CAPACITY: usize = 15_000;
 const TRAINING_BATCH_SIZE: usize = 32;
@@ -68,12 +68,12 @@ fn main(
     let mut _pov = 0;
 
     let map_suffix = if LEARNING {"-training"} else {""};
-    let map_path = format!("./maps/0/map{}.glb", map_suffix);
+    let map_path = format!("./maps/{}/map{}.glb", MAP_NUM, map_suffix);
 
     let (level_bytes, navmesh_bytes) = if let Ok(level_bytes) = 
         std::fs::read(&map_path) {
         if let Ok(navmesh_bytes) = 
-            std::fs::read(format!("./maps/0/navmesh{}.bin", map_suffix)) {
+            std::fs::read(format!("./maps/{}/navmesh{}.bin", MAP_NUM, map_suffix)) {
             (level_bytes, navmesh_bytes)
         }
         else {
@@ -104,8 +104,7 @@ fn main(
             },
             num_players: NUM_PLAYERS,
             min_keys: 4,
-            player_radius: PLAYER_RADIUS,
-            debug: LEARNING,
+            debug: true,
             training: LEARNING,
         }
     );
@@ -162,7 +161,7 @@ fn main(
                 1000 
             } 
             else {
-                rng.gen_range(1000..10000)
+                rng.gen_range(1000..3000)
             },
             obs: Tensor::default(),
         });
@@ -178,7 +177,11 @@ fn main(
         let mut steps = 0;
         let mut finished = false;
 
-        let obs = &game.reset(&mut renderer, &mut rng);
+        let obs = &game.reset(
+            &vec![EnvPlayerOptions{ radius: 0.8, height: 1.8, xp: 0 }; NUM_PLAYERS],
+            &mut renderer, 
+            &mut rng
+        );
         for i in 0..game.options.num_players {
             players[i].last_thought = 0;
             players[i].obs = Tensor::from_slice(&obs[i]).to(Device::Cuda(0));
