@@ -41,6 +41,7 @@ const DELTA_TIME: f32 = if LEARNING {1.0} else {600.0 / FPS};
 const RAYS: usize = 15;
 const FOV: f32 = 180.0 * (PI / 180.0);
 
+const SEEK_TARGET_SKILL: &str = "seek-target";
 const REPLAY_BUFFER_CAPACITY: usize = 15_000;
 const TRAINING_BATCH_SIZE: usize = 32;
 const MAX_EPISODES: usize = 40;
@@ -112,8 +113,8 @@ fn main(
     let options = BaseAgentOptions { 
         dqn: DqnOptions {
             learning_rate: LEARNING_RATE,
-            n_actions: game.get_num_actions(),
-            n_obs: game.get_num_obs(),
+            n_actions: game.get_num_actions(SEEK_TARGET_SKILL),
+            n_obs: game.get_num_obs(SEEK_TARGET_SKILL),
             n_hidden: NUM_HIDDEN
         },
         gamma: GAMMA,
@@ -152,9 +153,9 @@ fn main(
         agent.load(tensors_path.to_string())?;
     }
 
-    let mut players = vec![];
+    let mut inst_players = vec![];
     for _ in 0..NUM_PLAYERS {
-        players.push(Player {
+        inst_players.push(Player {
             active: true,
             last_thought: 0,
             steps_per_thought: if LEARNING { 
@@ -178,16 +179,26 @@ fn main(
         let mut finished = false;
 
         let obs = &game.reset(
-            &vec![EnvPlayerOptions{ radius: 0.8, height: 1.8, xp: 0 }; NUM_PLAYERS],
+            &vec![
+                EnvPlayerOptions{ 
+                    radius: 0.8, 
+                    height: 1.8, 
+                    xp: 0.0 
+                }; 
+                NUM_PLAYERS
+            ],
             &mut renderer, 
             &mut rng
         );
         for i in 0..game.options.num_players {
-            players[i].last_thought = 0;
-            players[i].obs = Tensor::from_slice(&obs[i]).to(Device::Cuda(0));
+            inst_players[i].last_thought = 0;
+            inst_players[i].obs = Tensor::from_slice(
+                &obs[i][SEEK_TARGET_SKILL]).to(Device::Cuda(0));
         }
 
         game.render(&mut renderer, 0.0);
+
+        let mut players_idx = create_players_idx(&mut game, &mut rng);
 
         while !finished {
             let events = renderer.poll_events();
@@ -237,21 +248,21 @@ fn main(
 
             let mut actions = vec![(0usize, None); game.options.num_players];
 
-            let players_idx = gen_players_idx(&mut game, &mut rng);
+            circ_players_idx(&mut players_idx);
             
             for i in 0..game.options.num_players {
                 let p = players_idx[i];
-                let player = &mut players[p];
+                let inst_player = &mut inst_players[p];
 
                 actions[i].0 = p;
                 
-                if player.active {
-                    player.last_thought += 1000;
-                    if player.last_thought >= player.steps_per_thought {
-                        player.last_thought = 0;
+                if inst_player.active {
+                    inst_player.last_thought += 1000;
+                    if inst_player.last_thought >= inst_player.steps_per_thought {
+                        inst_player.last_thought = 0;
 
-                        let action_ts = agent.choose_action(&player.obs, &mut rng)
-                            .unwrap_or(Tensor::from(game.random_action(&mut rng) as i64)
+                        let action_ts = agent.choose_action(&inst_player.obs, &mut rng)
+                            .unwrap_or(Tensor::from(game.random_action(SEEK_TARGET_SKILL, &mut rng) as i64)
                                 .to(Device::Cuda(0)));
 
                         let mut action = vec![0i64; 1];
@@ -275,19 +286,22 @@ fn main(
                 score += step.players[0].reward;
             }
 
-            for i in 0..step.players.len() {
-                let obs = &step.players[i].obs;
-                let next_obs_ts = Tensor::from_slice(obs).to(Device::Cuda(0));
+            let mut i = 0;
+            for step_player in step.players {
+                let inst_player = &mut inst_players[i];
+
+                let next_obs_ts = Tensor::from_slice(
+                    &step_player.obs[SEEK_TARGET_SKILL]).to(Device::Cuda(0));
 
                 if LEARNING {
-                    if players[0].last_thought == 0 {
-                        let action_ts = Tensor::from_slice(&[actions[0].1.unwrap() as i64])
+                    if let Some(action) = actions[0].1 {
+                        let action_ts = Tensor::from_slice(&[action as i64])
                             .to(Device::Cuda(0));
 
                         agent.store_transition(
-                            &players[0].obs, 
+                            &inst_player.obs, 
                             &action_ts, 
-                            &step.players[0].reward.into(), 
+                            &step_player.reward.into(), 
                             &next_obs_ts, 
                             &step.terminated.into(),
                             &timedout.into()
@@ -297,8 +311,10 @@ fn main(
                     }
                 }
 
-                players[i].active = players[0].active;
-                players[i].obs = next_obs_ts;
+                inst_player.active = step_player.active;
+                inst_player.obs = next_obs_ts;
+
+                i += 1;
             }
 
             game.render(&mut renderer, if LEARNING {if steps % 12 != 0 {0.0} else {1.0}} else {1.0});
@@ -337,7 +353,7 @@ fn main(
     Ok(())
 }
 
-fn gen_players_idx(
+fn create_players_idx(
     game: &mut Game,
     rng: &mut StdRng
 ) -> Vec<usize> {
@@ -348,4 +364,17 @@ fn gen_players_idx(
     }
 
     indexes.into_iter().collect()
+}
+
+fn circ_players_idx(
+    indexes: &mut Vec<usize>
+) {
+    let len = indexes.len();
+    
+    let first = indexes[0];
+    for i in 0..len-1 {
+        indexes[i] = indexes[i+1];
+    }
+
+    indexes[len-1] = first;
 }
