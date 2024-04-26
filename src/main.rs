@@ -12,10 +12,10 @@ use agent::Agent;
 use base_agent::BaseAgentOptions;
 use ddqn_agent::DdqnAgent;
 use rcircuit_engine::{
-    engine::asset::GameAssetRef, 
-    engine::{Game, GameOptions, MapInfo}, 
-    map::Map, 
-    entities::PlayerFOV
+    consts::SEEK_TARGET_SKILL, 
+    engine::{asset::GameAssetRef, Game, GameOptions, MapInfo}, 
+    entities::PlayerFOV, 
+    map::Map
 };
 use dqn::DqnOptions;
 use neuralarena_cdk::models::{
@@ -41,7 +41,6 @@ const DELTA_TIME: f32 = if LEARNING {1.0} else {600.0 / FPS};
 const RAYS: usize = 15;
 const FOV: f32 = 180.0 * (PI / 180.0);
 
-const SEEK_TARGET_SKILL: &str = "seek-target";
 const REPLAY_BUFFER_CAPACITY: usize = 15_000;
 const TRAINING_BATCH_SIZE: usize = 32;
 const MAX_EPISODES: usize = 40;
@@ -63,8 +62,7 @@ struct Player {
 
 fn main(
 ) -> Result<(), String> {
-    let tensors_path = format!("./weights/{}rays-{}hidden-{}epsilon.safetensors", 
-        RAYS, NUM_HIDDEN, EPSILON_MIN);
+    let tensors_path = format!("./tensors/{}.safetensors", SEEK_TARGET_SKILL);
     let mut rng = StdRng::seed_from_u64(1234);
     let mut _pov = 0;
 
