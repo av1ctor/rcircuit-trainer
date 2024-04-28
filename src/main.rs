@@ -30,14 +30,14 @@ use tch::{Tensor, Device};
 use three_renderer::ThreeRenderer;
 use three_rs::{core::Transformable, renderer::Event};
 
-const LEARNING: bool = false;
+const LEARNING: bool = true;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
-const MAP_NUM: usize = 2;
+const MAP_NUM: usize = 0;
 const SCREEN_W: u32 = 1000;
 const SCREEN_H: u32 = 600;
-const FPS: f32 = 60.0*3.0; // frames per sec
+const FPS: f32 = 60.0*if LEARNING {5.0} else {1.0}; // frames per sec
 const TICKS_PER_RENDER: u32 = (1000.0 / FPS) as u32;
-const DELTA_TIME: f32 = if LEARNING {1.0} else {600.0 / FPS};
+const DELTA_TIME: f32 = if LEARNING {1.0} else {60.0 / FPS};
 const RAYS: usize = 15;
 const FOV: f32 = 180.0 * (PI / 180.0);
 
@@ -49,7 +49,7 @@ const REPLACE_TARGET_CNT: usize = 128;
 const GAMMA: f64 = 0.99;
 const EPSILON: f64 = 1.0;
 const EPSILON_MIN: f64 = 0.05;
-const EPSILON_DECAY: f64 = 1e-5;
+const EPSILON_DECAY: f64 = 3e-5;
 const NUM_HIDDEN: usize = 32;
 const MAX_STEPS: usize = 10000;
 
@@ -99,7 +99,7 @@ fn main(
             fov: PlayerFOV { 
                 rays: RAYS, 
                 angle: FOV, 
-                max_dist: 2.5,
+                max_dist: 5.0,
             },
             num_players: NUM_PLAYERS,
             min_keys: 4,
@@ -152,16 +152,20 @@ fn main(
     }
 
     let mut inst_players = vec![];
-    for _ in 0..NUM_PLAYERS {
+    for i in 0..NUM_PLAYERS {
+        let steps_per_thought = if LEARNING { 
+            1000 
+        } 
+        else {
+            rng.gen_range(1000..3000)
+        };
+
+        println!("player {}: {}spt", i, steps_per_thought as f32 / 1000.0);
+
         inst_players.push(Player {
             active: true,
             last_thought: 0,
-            steps_per_thought: if LEARNING { 
-                1000 
-            } 
-            else {
-                rng.gen_range(1000..3000)
-            },
+            steps_per_thought,
             obs: Tensor::default(),
         });
     }
@@ -315,7 +319,7 @@ fn main(
                 i += 1;
             }
 
-            game.render(&mut renderer, if LEARNING {if steps % 12 != 0 {0.0} else {1.0}} else {1.0});
+            game.render(&mut renderer, if LEARNING {if steps % 24 != 0 {0.0} else {1.0}} else {1.0});
 
             if !LEARNING {
                 let ticks_elapsed = renderer.ticks() - ticks_initial;
