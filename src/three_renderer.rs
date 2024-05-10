@@ -132,7 +132,7 @@ impl Renderer<EntityState> for ThreeRenderer {
             },
             AssetType::Object => {
                 let mesh = Mesh::new(
-                    &Box3::new(consts::EXIT_WIDTH, consts::EXIT_HEIGHT, consts::EXIT_WIDTH / 2.0)
+                    &Box3::new(consts::EXIT_RADIUS*2.0, consts::EXIT_HEIGHT, consts::EXIT_RADIUS)
                 );
                 self.assets.insert(asset_ref, (AssetType::Object, mesh));
     

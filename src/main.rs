@@ -30,7 +30,7 @@ use tch::{Tensor, Device};
 use three_renderer::ThreeRenderer;
 use three_rs::{core::Transformable, renderer::Event};
 
-const LEARNING: bool = true;
+const LEARNING: bool = false;
 const NUM_PLAYERS: usize = if LEARNING {1} else {4};
 const MAP_NUM: usize = 0;
 const SCREEN_W: u32 = 1000;
@@ -99,7 +99,7 @@ fn main(
             fov: PlayerFOV { 
                 rays: RAYS, 
                 angle: FOV, 
-                max_dist: 5.0,
+                max_dist: 2.5,
             },
             num_players: NUM_PLAYERS,
             min_keys: 4,
