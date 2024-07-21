@@ -79,7 +79,7 @@ struct Player {
 fn main(
 ) -> Result<(), String> {
     let seek_target_tensors_path = format!("./tensors/seek-target/{}.safetensors", consts::SEEK_TARGET_SKILL);
-    let hand_combat_tensors_path = format!("./tensors/hand-comabt/{}.safetensors", consts::HAND_COMBAT_SKILL);
+    let hand_combat_tensors_path = format!("./tensors/hand-combat/{}.safetensors", consts::HAND_COMBAT_SKILL);
         
     let mut rng = StdRng::seed_from_u64(1234);
     let mut _pov = 0;
@@ -150,8 +150,8 @@ fn main(
     let mut seek_target_agent = DdqnAgent::new(&BaseAgentOptions { 
         dqn: DqnOptions {
             learning_rate: SEEK_TARGET_LEARNING_RATE,
-            n_actions: game.get_num_actions(consts::SEEK_TARGET_SKILL),
-            n_obs: game.get_num_obs(consts::SEEK_TARGET_SKILL),
+            n_actions: game.get_num_actions(&consts::SEEK_TARGET_SKILL.to_string()),
+            n_obs: game.get_num_obs(&consts::SEEK_TARGET_SKILL.to_string()),
             n_hidden: SEEK_TARGET_NUM_HIDDEN
         },
         gamma: SEEK_TARGET_GAMMA,
@@ -170,8 +170,8 @@ fn main(
     let mut hand_combat_agent = DdqnAgent::new(&BaseAgentOptions { 
         dqn: DqnOptions {
             learning_rate: HAND_COMBAT_LEARNING_RATE,
-            n_actions: game.get_num_actions(consts::HAND_COMBAT_SKILL),
-            n_obs: game.get_num_obs(consts::HAND_COMBAT_SKILL),
+            n_actions: game.get_num_actions(&consts::HAND_COMBAT_SKILL.to_string()),
+            n_obs: game.get_num_obs(&consts::HAND_COMBAT_SKILL.to_string()),
             n_hidden: HAND_COMBAT_NUM_HIDDEN
         },
         gamma: HAND_COMBAT_GAMMA,
@@ -197,10 +197,10 @@ fn main(
         };
 
         let hand_combat_stp = if LEARNING { 
-            10_000 
+            30_000 
         } 
         else {
-            rng.gen_range(10_000..30_000)
+            rng.gen_range(30_000..60_000)
         };
 
         println!("player {}: seek_target: {}spt, hand_combat: {}spt", i, seek_target_stp as f32 / 1000.0, hand_combat_stp as f32 / 1000.0);
@@ -302,7 +302,7 @@ fn main(
 
             let ticks_initial = renderer.ticks();
 
-            let mut actions = vec![(0usize, None); game.options.num_players];
+            let mut actions = vec![(0usize, ("".to_string(), None)); game.options.num_players];
 
             circ_players_idx(&mut players_idx);
             
@@ -314,7 +314,6 @@ fn main(
                 
                 if inst_player.active {
                     let cur_skill = inst_player.skill.as_str();
-                    println!("skill: {}", cur_skill);
 
                     let thoughts = inst_player.thoughts.get_mut(cur_skill).unwrap();
                     thoughts.last += 1000;
@@ -327,7 +326,7 @@ fn main(
                                     &inst_player.obs[consts::SEEK_TARGET_SKILL], 
                                     &mut rng
                                 ).unwrap_or(
-                                    Tensor::from(game.random_action(consts::SEEK_TARGET_SKILL, &mut rng) as i64)
+                                    Tensor::from(game.random_action(&consts::SEEK_TARGET_SKILL.to_string(), &mut rng) as i64)
                                         .to(Device::Cuda(0))
                                 )
                             },
@@ -336,7 +335,7 @@ fn main(
                                     &inst_player.obs[consts::HAND_COMBAT_SKILL], 
                                     &mut rng
                                 ).unwrap_or(
-                                    Tensor::from(game.random_action(consts::HAND_COMBAT_SKILL, &mut rng) as i64)
+                                    Tensor::from(game.random_action(&consts::HAND_COMBAT_SKILL.to_string(), &mut rng) as i64)
                                         .to(Device::Cuda(0))
                                 )
                             },
@@ -347,7 +346,7 @@ fn main(
 
                         let mut action = vec![0i64; 1];
                         action_ts.copy_data(&mut action, 1);
-                        actions[i].1 = Some(action[0] as usize);
+                        actions[i].1 = (cur_skill.to_string(), Some(action[0] as usize));
                     }
                 }
             }
@@ -369,17 +368,17 @@ fn main(
             let mut i = 0;
             for step_player in step.players {
                 let inst_player = &mut inst_players[i];
-                println!("new skill: {}", step_player.skill);
 
                 let next_obs_ts = Tensor::from_slice(
                     &step_player.obs[&inst_player.skill]).to(Device::Cuda(0));
 
-                if LEARNING {
-                    if let Some(action) = actions[0].1 {
+                if LEARNING && i == 0 {
+                    let skill = &actions[0].1.0;
+                    if let Some(action) = actions[0].1.1 {
                         let action_ts = Tensor::from_slice(&[action as i64])
                             .to(Device::Cuda(0));
 
-                        match inst_player.skill.as_str() {
+                        match skill.as_str() {
                             consts::SEEK_TARGET_SKILL => {
                                 seek_target_agent.store_transition(
                                     &inst_player.obs[consts::SEEK_TARGET_SKILL], 
@@ -405,7 +404,7 @@ fn main(
                                 hand_combat_agent.learn(&mut rng);
                             },
                             _ => {
-                                panic!("Unknown skill: {}", inst_player.skill)
+                                panic!("Unknown skill: {}", skill)
                             }
                         }
                     }
